@@ -19,7 +19,7 @@ std::unique_ptr<ExprAST> Parser::parse_number_expr() {
 
 std::unique_ptr<ExprAST> Parser::parse_paren_expr() {
     cur_token = lexer.get_token(); // remove '('
-    std::unique_ptr<ExprAST> v = parse_number_expr();
+    std::unique_ptr<ExprAST> v = parse_expr();
 
     if (!v) {
         return nullptr;
