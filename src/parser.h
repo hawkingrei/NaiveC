@@ -70,6 +70,21 @@ public:
     virtual llvm::Value* code_gen() override;
 };
 
+class DeclareAST {
+private:
+    std::string name;
+    bool is_global;
+public:
+    DeclareAST(const std::string& name, bool is_global = false)
+        : name(name), is_global(is_global) { }
+
+    inline void set_global(const bool g) {
+        is_global = g;
+    }
+
+    llvm::Value* code_gen();
+};
+
 class PrototypeAST {
 private:
     std::string name;
@@ -120,6 +135,8 @@ public:
 
     std::unique_ptr<ExprAST> parse_bin_op_right(int, std::unique_ptr<ExprAST>);
 
+    std::unique_ptr<DeclareAST> parse_declare();
+
     std::unique_ptr<PrototypeAST> parse_prototype();
 
     std::unique_ptr<FunctionAST> parse_definition();
@@ -127,6 +144,8 @@ public:
     std::unique_ptr<FunctionAST> parse_top_level_expr();
 
     void handle_definition();
+
+    void handle_global_declare();
 
     void handle_top_level_expr();
 

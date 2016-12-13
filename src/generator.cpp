@@ -8,7 +8,7 @@
 static Generator* generator = Generator::instance();
 
 llvm::Value* NumberExprAST::code_gen() {
-    return llvm::ConstantInt::get(Generator::instance()->context, llvm::APInt(32, (uint64_t)value, true));
+    return llvm::ConstantInt::get(Generator::instance()->context, llvm::APInt(32, (uint64_t) value, true));
 }
 
 llvm::Value* VariableExprAST::code_gen() {
@@ -71,6 +71,17 @@ llvm::Function* PrototypeAST::code_gen() {
     return f;
 }
 
+llvm::Value* DeclareAST::code_gen() {
+    if (is_global) {
+        return new llvm::GlobalVariable(
+            *generator->module, llvm::Type::getInt32Ty(generator->context),
+            false, llvm::GlobalValue::ExternalLinkage, 0, name);
+    } else {
+        return generator->builder.CreateAlloca(
+            llvm::Type::getInt32Ty(generator->context));
+    }
+}
+
 llvm::Function* FunctionAST::code_gen() {
     llvm::Function* function = generator->module->getFunction(proto->get_name());
     if (!function) {
@@ -81,7 +92,7 @@ llvm::Function* FunctionAST::code_gen() {
         return nullptr;
     }
 
-    llvm::BasicBlock *block = llvm::BasicBlock::Create(generator->context, "entry", function);
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(generator->context, "entry", function);
     generator->builder.SetInsertPoint(block);
 
     generator->symbol_table.clear();
@@ -89,7 +100,7 @@ llvm::Function* FunctionAST::code_gen() {
         generator->symbol_table[arg.getName()] = &arg;
     }
 
-    if (llvm::Value *ret = body->code_gen()) {
+    if (llvm::Value* ret = body->code_gen()) {
         generator->builder.CreateRet(ret);
         llvm::verifyFunction(*function);
         return function;

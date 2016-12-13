@@ -24,6 +24,7 @@ enum TokenType {
     T_SQUARE_R,
     T_COMMA,
     T_DEF,
+    T_VAR,
 };
 
 struct Token {

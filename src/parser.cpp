@@ -88,6 +88,18 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
     }
 }
 
+std::unique_ptr<DeclareAST> Parser::parse_declare() {
+    cur_token = lexer.get_token(); // remove 'var'
+    if (cur_token.type != T_IDENTIFIER) {
+        return nullptr;
+    }
+
+    auto ret = std::make_unique<DeclareAST>(cur_token.value);
+    cur_token = lexer.get_token();
+
+    return std::move(ret);
+}
+
 int Parser::get_token_prec() {
     if (cur_token.type != T_OP) {
         return -1;
@@ -200,6 +212,17 @@ void Parser::handle_top_level_expr() {
     }
 }
 
+void Parser::handle_global_declare() {
+    if (auto d = parse_declare()) {
+        d->set_global(true);
+        if (auto d_ir = d->code_gen()) {
+            d_ir->dump();
+        }
+    } else {
+        cur_token = lexer.get_token();
+    }
+}
+
 void Parser::main_loop() {
     cur_token = lexer.get_token();
     while (true) {
@@ -211,6 +234,9 @@ void Parser::main_loop() {
                 break;
             case T_DEF:
                 handle_definition();
+                break;
+            case T_VAR:
+                handle_global_declare();
                 break;
             default:
                 handle_top_level_expr();
