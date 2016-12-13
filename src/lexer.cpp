@@ -41,8 +41,8 @@ Token Lexer::get_token() {
         } while (isalpha(content[ptr]) || isdigit(content[ptr]));
 
         token.value = str;
-        if (str == "int") {
-            token.type = T_TYPE;
+        if (str == "def") {
+            token.type = T_DEF;
         } else {
             token.type = T_IDENTIFIER;
         }

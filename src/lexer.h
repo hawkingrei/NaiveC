@@ -22,7 +22,8 @@ enum TokenType {
     T_CURLY_R,
     T_SQUARE_L,
     T_SQUARE_R,
-    T_COMMA
+    T_COMMA,
+    T_DEF,
 };
 
 struct Token {
@@ -39,7 +40,6 @@ private:
 
 public:
     Lexer(std::string &&content) : content(content) {}
-
     Token get_token();
 };
 

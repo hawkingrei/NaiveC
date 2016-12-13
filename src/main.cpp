@@ -4,6 +4,7 @@
 #include <streambuf>
 #include <utility>
 #include "lexer.h"
+#include "parser.h"
 
 using std::cout;
 using std::endl;
@@ -27,17 +28,11 @@ int main(int argc, char *argv[]) {
     std::string content((std::istreambuf_iterator<char>(fin)),
                         std::istreambuf_iterator<char>());
 
+    fin.close();
+
     Lexer lexer(std::move(content));
 
-    Token token;
-    try {
-        while ((token = lexer.get_token()).type != T_EOF) {
-            cout << token << endl;
-        }
-    } catch (std::exception e) {
-        cout << e.what() << endl;
-        return 1;
-    }
+    Parser parser(lexer);
 
-    fin.close();
+    parser.main_loop();
 }
