@@ -165,7 +165,39 @@ std::unique_ptr<FunctionAST> Parser::parse_definition() {
     return nullptr;
 }
 
+std::unique_ptr<FunctionAST> Parser::parse_top_level_expr() {
+    if (auto expr = parse_expr()) {
+        auto proto = std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
+        return std::make_unique<FunctionAST>(std::move(proto), std::move(expr));
+    }
+
+    return nullptr;
+}
+
+void Parser::handle_definition() {
+    if (auto fn_ast = parse_definition()) {
+        if (auto fn_ir = fn_ast->code_gen()) {
+            std::cout << "Read function definition: " << std::endl;
+            fn_ir->dump();
+        }
+    } else {
+        cur_token = lexer.get_token();
+    }
+}
+
+void Parser::handle_top_level_expr() {
+    if (auto fn_ast = parse_top_level_expr()) {
+        if (auto fn_ir = fn_ast->code_gen()) {
+            std::cout << "Read top-level expression: " << std::endl;
+            fn_ir->dump();
+        }
+    } else {
+        cur_token = lexer.get_token();
+    }
+}
+
 void Parser::main_loop() {
+    cur_token = lexer.get_token();
     while (true) {
         switch (cur_token.type) {
             case T_EOF:
@@ -174,10 +206,10 @@ void Parser::main_loop() {
                 cur_token = lexer.get_token();
                 break;
             case T_DEF:
-                parse_definition();
+                handle_definition();
                 break;
             default:
-                cur_token = lexer.get_token();
+                handle_top_level_expr();
                 break;
         }
     }

@@ -9,10 +9,23 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <llvm/ADT/APInt.h>
+#include <llvm/ADT/STLExtras.h>
+#include <llvm/IR/BasicBlock.h>
+#include <llvm/IR/Constant.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Type.h>
+#include <llvm/IR/Function.h>
+#include <llvm/IR/Module.h>
+#include <llvm/IR/Verifier.h>
 #include "lexer.h"
 
 class ExprAST {
 public:
+    virtual llvm::Value* code_gen() = 0;
+
     virtual ~ExprAST() {}
 };
 
@@ -21,6 +34,8 @@ private:
     int value;
 public:
     NumberExprAST(int value) : value(value) {}
+
+    virtual llvm::Value* code_gen() override;
 };
 
 class VariableExprAST : public ExprAST {
@@ -28,6 +43,8 @@ private:
     std::string name;
 public:
     VariableExprAST(std::string name) : name(name) {}
+
+    virtual llvm::Value* code_gen() override;
 };
 
 class BinaryExprAST : public ExprAST {
@@ -38,6 +55,8 @@ private:
 public:
     BinaryExprAST(char op, std::unique_ptr<ExprAST>&& left, std::unique_ptr<ExprAST>&& right)
         : op(op), left(std::move(left)), right(std::move(right)) {}
+
+    virtual llvm::Value* code_gen() override;
 };
 
 class CallExprAST : public ExprAST {
@@ -47,15 +66,24 @@ private:
 public:
     CallExprAST(const std::string& callee, std::vector<std::unique_ptr<ExprAST>>&& args)
         : callee(callee), args(std::move(args)) {}
+
+    virtual llvm::Value* code_gen() override;
 };
 
 class PrototypeAST {
+private:
     std::string name;
     std::vector<std::string> args;
 
 public:
     PrototypeAST(const std::string& name, std::vector<std::string> args)
         : name(name), args(args) {}
+
+    llvm::Function* code_gen();
+
+    const std::string& get_name() const {
+        return name;
+    }
 };
 
 class FunctionAST {
@@ -65,6 +93,8 @@ class FunctionAST {
 public:
     FunctionAST(std::unique_ptr<PrototypeAST>&& proto, std::unique_ptr<ExprAST>&& body)
         : proto(std::move(proto)), body(std::move(body)) {}
+
+    llvm::Function* code_gen();
 };
 
 
@@ -94,9 +124,16 @@ public:
 
     std::unique_ptr<FunctionAST> parse_definition();
 
+    std::unique_ptr<FunctionAST> parse_top_level_expr();
+
+    void handle_definition();
+
+    void handle_top_level_expr();
+
     void main_loop();
 
-    Parser(const Lexer& lexer) : lexer(lexer) {}
+    Parser(const Lexer& lexer)
+        : lexer(lexer) {}
 };
 
 
