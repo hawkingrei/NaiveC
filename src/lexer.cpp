@@ -100,3 +100,13 @@ Token Lexer::get_token() {
 
     return token;
 }
+
+std::vector<Token> Lexer::tokenize() {
+    Token token;
+    std::vector<Token> tokens;
+    while ((token = get_token()).type != T_EOF) {
+        tokens.push_back(token);
+    }
+
+    return tokens;
+}

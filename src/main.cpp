@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
 
     Lexer lexer(std::move(content));
 
-    Parser parser(lexer);
+    Parser parser(lexer.tokenize());
 
     parser.main_loop();
 }

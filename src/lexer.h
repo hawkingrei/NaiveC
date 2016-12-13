@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
 
 enum TokenType {
     T_NUMBER = 0,
@@ -32,16 +33,19 @@ struct Token {
     std::string value = "";
 };
 
-std::ostream &operator<<(std::ostream &out, Token &t);
+std::ostream& operator<<(std::ostream& out, Token& t);
 
 class Lexer {
 private:
     std::string content;
     size_t ptr = 0;
 
-public:
-    Lexer(std::string &&content) : content(content) {}
     Token get_token();
+
+public:
+    Lexer(std::string&& content) : content(content) {}
+
+    std::vector<Token> tokenize();
 };
 
 

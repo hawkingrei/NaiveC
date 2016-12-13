@@ -76,7 +76,7 @@ private:
     bool is_global;
 public:
     DeclareAST(const std::string& name, bool is_global = false)
-        : name(name), is_global(is_global) { }
+        : name(name), is_global(is_global) {}
 
     inline void set_global(const bool g) {
         is_global = g;
@@ -115,8 +115,8 @@ public:
 
 class Parser {
 private:
-    Lexer lexer;
-    Token cur_token;
+    std::vector<Token> tokens;
+    std::vector<Token>::iterator token_it;
     static std::map<char, int> precedence_map;
 
     int get_token_prec();
@@ -151,8 +151,8 @@ public:
 
     void main_loop();
 
-    Parser(const Lexer& lexer)
-        : lexer(lexer) {}
+    Parser(const std::vector<Token>& tokens)
+        : tokens(tokens), token_it(this->tokens.begin()) {}
 };
 
 

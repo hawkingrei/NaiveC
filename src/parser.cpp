@@ -12,42 +12,42 @@ std::map<char, int> Parser::precedence_map = {
 };
 
 std::unique_ptr<ExprAST> Parser::parse_number_expr() {
-    std::unique_ptr<ExprAST> result = std::make_unique<NumberExprAST>(std::stoi(cur_token.value));
-    cur_token = lexer.get_token();
+    std::unique_ptr<ExprAST> result = std::make_unique<NumberExprAST>(std::stoi(token_it->value));
+    ++token_it;
     return result;
 }
 
 std::unique_ptr<ExprAST> Parser::parse_paren_expr() {
-    cur_token = lexer.get_token(); // remove '('
+    ++token_it; // remove '('
     std::unique_ptr<ExprAST> v = parse_expr();
 
     if (!v) {
         return nullptr;
     }
 
-    if (cur_token.type != T_PAREN_R) {
+    if (token_it->type != T_PAREN_R) {
         // TODO
         throw std::exception();
     }
 
-    cur_token = lexer.get_token(); // remove ')'
+    ++token_it; // remove ')'
 
     return v;
 }
 
 std::unique_ptr<ExprAST> Parser::parse_identifier_expr() {
-    std::string id_name = cur_token.value;
-    cur_token = lexer.get_token();
-    if (cur_token.type != T_PAREN_L) {
+    std::string id_name = token_it->value;
+    ++token_it;
+    if (token_it->type != T_PAREN_L) {
         return std::make_unique<VariableExprAST>(id_name);
     }
 
-    cur_token = lexer.get_token();
+    ++token_it;
 
     std::vector<std::unique_ptr<ExprAST>> args;
 
-    if (cur_token.type == T_PAREN_R) {
-        cur_token = lexer.get_token();
+    if (token_it->type == T_PAREN_R) {
+        ++token_it;
         return std::make_unique<CallExprAST>(id_name, std::move(args));
     }
 
@@ -57,24 +57,24 @@ std::unique_ptr<ExprAST> Parser::parse_identifier_expr() {
             return nullptr;
         }
         args.push_back(std::move(arg));
-        if (cur_token.type == T_PAREN_R) {
+        if (token_it->type == T_PAREN_R) {
             break;
         }
 
-        if (cur_token.type != T_COMMA) {
+        if (token_it->type != T_COMMA) {
             // TODO
             throw std::exception();
         }
 
-        cur_token = lexer.get_token(); // remove ','
+        ++token_it; // remove ','
     }
 
-    cur_token = lexer.get_token(); // remove ')'
+    ++token_it; // remove ')'
     return std::make_unique<CallExprAST>(id_name, std::move(args));
 }
 
 std::unique_ptr<ExprAST> Parser::parse_primary() {
-    switch (cur_token.type) {
+    switch (token_it->type) {
         case T_IDENTIFIER:
             return parse_identifier_expr();
         case T_NUMBER:
@@ -83,29 +83,29 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
             return parse_paren_expr();
         default:
             // TODO
-            std::cerr << cur_token << std::endl;
+            std::cerr << *token_it << std::endl;
             throw std::exception();
     }
 }
 
 std::unique_ptr<DeclareAST> Parser::parse_declare() {
-    cur_token = lexer.get_token(); // remove 'var'
-    if (cur_token.type != T_IDENTIFIER) {
+    ++token_it; // remove 'var'
+    if (token_it->type != T_IDENTIFIER) {
         return nullptr;
     }
 
-    auto ret = std::make_unique<DeclareAST>(cur_token.value);
-    cur_token = lexer.get_token();
+    auto ret = std::make_unique<DeclareAST>(token_it->value);
+    ++token_it;
 
     return std::move(ret);
 }
 
 int Parser::get_token_prec() {
-    if (cur_token.type != T_OP) {
+    if (token_it->type != T_OP) {
         return -1;
     }
 
-    int token_prec = precedence_map[cur_token.value[0]];
+    int token_prec = precedence_map[token_it->value[0]];
 
     return (token_prec <= 0) ? -1 : token_prec;
 }
@@ -117,14 +117,14 @@ std::unique_ptr<ExprAST> Parser::parse_bin_op_right(int expr_prec, std::unique_p
             return left;
         }
 
-        char op = cur_token.value[0];
-        cur_token = lexer.get_token();
+        char op = token_it->value[0];
+        ++token_it;
         std::unique_ptr<ExprAST> right = parse_primary();
         if (!right) {
             return nullptr;
         }
 
-        int next_prec = precedence_map[cur_token.value[0]];
+        int next_prec = precedence_map[token_it->value[0]];
 
         if (token_prec < next_prec) {
             right = parse_bin_op_right(token_prec + 1, std::move(right));
@@ -144,33 +144,33 @@ std::unique_ptr<ExprAST> Parser::parse_expr() {
 }
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
-    if (cur_token.type != T_IDENTIFIER) {
+    if (token_it->type != T_IDENTIFIER) {
         throw std::exception();
     }
 
-    std::string fn_name = cur_token.value;
-    cur_token = lexer.get_token();
+    std::string fn_name = token_it->value;
+    ++token_it;
 
-    if (cur_token.type != T_PAREN_L) {
+    if (token_it->type != T_PAREN_L) {
         throw std::exception();
     }
 
     std::vector<std::string> arg_names;
-    while ((cur_token = lexer.get_token()).type == T_IDENTIFIER) {
-        arg_names.push_back(cur_token.value);
+    while ((++token_it)->type == T_IDENTIFIER) {
+        arg_names.push_back(token_it->value);
     }
 
-    if (cur_token.type != T_PAREN_R) {
+    if (token_it->type != T_PAREN_R) {
         throw std::exception();
     }
 
-    cur_token = lexer.get_token();
+    ++token_it;
 
     return std::make_unique<PrototypeAST>(fn_name, std::move(arg_names));
 }
 
 std::unique_ptr<FunctionAST> Parser::parse_definition() {
-    cur_token = lexer.get_token();
+    ++token_it;
     std::unique_ptr<PrototypeAST> proto = parse_prototype();
     if (!proto) {
         return nullptr;
@@ -198,7 +198,7 @@ void Parser::handle_definition() {
             fn_ir->dump();
         }
     } else {
-        cur_token = lexer.get_token();
+        ++token_it;
     }
 }
 
@@ -208,7 +208,7 @@ void Parser::handle_top_level_expr() {
             fn_ir->dump();
         }
     } else {
-        cur_token = lexer.get_token();
+        ++token_it;
     }
 }
 
@@ -219,18 +219,18 @@ void Parser::handle_global_declare() {
             d_ir->dump();
         }
     } else {
-        cur_token = lexer.get_token();
+        ++token_it;
     }
 }
 
 void Parser::main_loop() {
-    cur_token = lexer.get_token();
-    while (true) {
-        switch (cur_token.type) {
+    ++token_it;
+    while (token_it != tokens.end()) {
+        switch (token_it->type) {
             case T_EOF:
                 return;
             case T_SEMICOLON:
-                cur_token = lexer.get_token();
+                ++token_it;
                 break;
             case T_DEF:
                 handle_definition();
