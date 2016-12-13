@@ -46,6 +46,11 @@ std::unique_ptr<ExprAST> Parser::parse_identifier_expr() {
 
     std::vector<std::unique_ptr<ExprAST>> args;
 
+    if (cur_token.type == T_PAREN_R) {
+        cur_token = lexer.get_token();
+        return std::make_unique<CallExprAST>(id_name, std::move(args));
+    }
+
     while (true) {
         std::unique_ptr<ExprAST> arg = parse_expr();
         if (!arg) {
@@ -78,6 +83,7 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
             return parse_paren_expr();
         default:
             // TODO
+            std::cerr << cur_token << std::endl;
             throw std::exception();
     }
 }
@@ -177,7 +183,6 @@ std::unique_ptr<FunctionAST> Parser::parse_top_level_expr() {
 void Parser::handle_definition() {
     if (auto fn_ast = parse_definition()) {
         if (auto fn_ir = fn_ast->code_gen()) {
-            std::cout << "Read function definition: " << std::endl;
             fn_ir->dump();
         }
     } else {
@@ -188,7 +193,6 @@ void Parser::handle_definition() {
 void Parser::handle_top_level_expr() {
     if (auto fn_ast = parse_top_level_expr()) {
         if (auto fn_ir = fn_ast->code_gen()) {
-            std::cout << "Read top-level expression: " << std::endl;
             fn_ir->dump();
         }
     } else {
