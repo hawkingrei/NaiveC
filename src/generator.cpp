@@ -8,7 +8,7 @@
 static Generator* generator = Generator::instance();
 
 llvm::Value* NumberExprAST::code_gen() {
-    return llvm::ConstantFP::get(Generator::instance()->context, llvm::APFloat((double) value));
+    return llvm::ConstantInt::get(Generator::instance()->context, llvm::APInt(32, (uint64_t)value, true));
 }
 
 llvm::Value* VariableExprAST::code_gen() {
@@ -27,15 +27,15 @@ llvm::Value* BinaryExprAST::code_gen() {
 
     switch (op) {
         case '+':
-            return generator->builder.CreateFAdd(l, r, "addtmp");
+            return generator->builder.CreateAdd(l, r, "addtmp");
         case '-':
-            return generator->builder.CreateFSub(l, r, "subtmp");
+            return generator->builder.CreateSub(l, r, "subtmp");
         case '*':
-            return generator->builder.CreateFMul(l, r, "multmp");
+            return generator->builder.CreateMul(l, r, "multmp");
         case '<':
-            l = generator->builder.CreateFCmpULT(l, r, "cmptmp");
+            l = generator->builder.CreateICmpULT(l, r, "cmptmp");
             return generator->builder.CreateUIToFP(
-                l, llvm::Type::getDoubleTy(generator->context), "booltmp");
+                l, llvm::Type::getInt32Ty(generator->context), "booltmp");
         default:
             return nullptr;
     }
@@ -59,8 +59,8 @@ llvm::Value* CallExprAST::code_gen() {
 }
 
 llvm::Function* PrototypeAST::code_gen() {
-    std::vector<llvm::Type*> values(args.size(), llvm::Type::getDoubleTy(generator->context));
-    llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getDoubleTy(generator->context), values, false);
+    std::vector<llvm::Type*> values(args.size(), llvm::Type::getInt32Ty(generator->context));
+    llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(generator->context), values, false);
     llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, generator->module.get());
 
     unsigned idx = 0;
