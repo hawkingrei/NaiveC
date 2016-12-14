@@ -103,7 +103,7 @@ public:
 
     llvm::Function* code_gen();
 
-    const std::string& get_name() const {
+    inline const std::string& get_name() const {
         return name;
     }
 };
