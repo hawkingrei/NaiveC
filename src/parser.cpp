@@ -11,6 +11,16 @@ std::map<char, int> Parser::precedence_map = {
     {'*', 40},
 };
 
+inline void Parser::assert_token(TokenType token_type) throw() {
+    if (token_it->type == token_type) {
+        return;
+    }
+
+    // TODO:
+    std::cerr << "Should be token " << token_type << std::endl;
+    throw std::exception();
+}
+
 std::unique_ptr<ExprAST> Parser::parse_number_expr() {
     std::unique_ptr<ExprAST> result = std::make_unique<NumberExprAST>(std::stoi(token_it->value));
     ++token_it;
@@ -25,10 +35,7 @@ std::unique_ptr<ExprAST> Parser::parse_paren_expr() {
         return nullptr;
     }
 
-    if (token_it->type != T_PAREN_R) {
-        // TODO
-        throw std::exception();
-    }
+    assert_token(T_PAREN_R);
 
     ++token_it; // remove ')'
 
@@ -61,10 +68,7 @@ std::unique_ptr<ExprAST> Parser::parse_identifier_expr() {
             break;
         }
 
-        if (token_it->type != T_COMMA) {
-            // TODO
-            throw std::exception();
-        }
+        assert_token(T_COMMA);
 
         ++token_it; // remove ','
     }
@@ -105,28 +109,17 @@ std::unique_ptr<DeclareAST> Parser::parse_declare() {
         return std::make_unique<DeclareAST>(type, id_name);
     }
 
-    if (token_it->type != T_SQUARE_L) {
-        throw std::exception();
-    }
-
+    assert_token(T_SQUARE_L);
     ++token_it; // remove '['
 
-    if (token_it->type != T_NUMBER) {
-        throw std::exception();
-    }
-
+    assert_token(T_NUMBER);
     int array_length = std::stoi(token_it->value);
     ++token_it;
 
-    if (token_it->type != T_SQUARE_R) {
-        throw std::exception();
-    }
-
+    assert_token(T_SQUARE_R);
     ++token_it; // remove ']'
 
-    if (token_it->type != T_SEMICOLON) {
-        throw std::exception();
-    }
+    assert_token(T_SEMICOLON);
 
     auto ret = std::make_unique<DeclareAST>(type, id_name, true, array_length);
     ++token_it;
@@ -178,25 +171,19 @@ std::unique_ptr<ExprAST> Parser::parse_expr() {
 }
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
-    if (token_it->type != T_IDENTIFIER) {
-        throw std::exception();
-    }
+    assert_token(T_IDENTIFIER);
 
     std::string fn_name = token_it->value;
     ++token_it;
 
-    if (token_it->type != T_PAREN_L) {
-        throw std::exception();
-    }
+    assert_token(T_PAREN_L);
 
     std::vector<std::string> arg_names;
     while ((++token_it)->type == T_IDENTIFIER) {
         arg_names.push_back(token_it->value);
     }
 
-    if (token_it->type != T_PAREN_R) {
-        throw std::exception();
-    }
+    assert_token(T_PAREN_R);
 
     ++token_it;
 

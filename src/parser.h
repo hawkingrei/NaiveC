@@ -126,6 +126,8 @@ private:
 
     int get_token_prec();
 
+    void assert_token(TokenType token_type) throw();
+
 public:
 
     std::unique_ptr<ExprAST> parse_expr();
