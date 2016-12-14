@@ -72,11 +72,16 @@ public:
 
 class DeclareAST {
 private:
+    std::string type;
     std::string name;
+    bool is_array;
+    size_t array_length;
     bool is_global;
 public:
-    DeclareAST(const std::string& name, bool is_global = false)
-        : name(name), is_global(is_global) {}
+    DeclareAST(std::string type, const std::string& name, bool is_array = false,
+               size_t array_length = 0, bool is_global = false)
+        : type(type), name(name), is_array(is_array),
+          array_length(array_length), is_global(is_global) {}
 
     inline void set_global(const bool g) {
         is_global = g;

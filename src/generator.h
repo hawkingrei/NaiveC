@@ -6,6 +6,7 @@
 #define NAIVEC_GENERATOR_H
 
 #include <memory>
+#include <map>
 #include <llvm/ADT/APInt.h>
 #include <llvm/ADT/STLExtras.h>
 #include <llvm/IR/BasicBlock.h>
@@ -24,13 +25,17 @@ private:
     static Generator* _instance;
 
     Generator() : builder(context),
-                  module(std::make_unique<llvm::Module>("jit", context)) {}
+                  module(std::make_unique<llvm::Module>("jit", context)),
+                  type_map({{"int",  llvm::Type::getInt32Ty(context)},
+                            {"char", llvm::Type::getInt8Ty(context)},
+                           }) {}
 
 public:
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder;
     std::unique_ptr<llvm::Module> module;
     std::map<std::string, llvm::Value*> symbol_table;
+    std::map<std::string, llvm::Type*> type_map;
 
     Generator(const Generator&) = delete;
 

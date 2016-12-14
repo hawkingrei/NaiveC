@@ -72,13 +72,18 @@ llvm::Function* PrototypeAST::code_gen() {
 }
 
 llvm::Value* DeclareAST::code_gen() {
+    llvm::Type* type_p = generator->type_map[type];
+    if (is_array) {
+        type_p = llvm::ArrayType::get(type_p, array_length);
+    }
+
     if (is_global) {
         return new llvm::GlobalVariable(
-            *generator->module, llvm::Type::getInt32Ty(generator->context),
-            false, llvm::GlobalValue::ExternalLinkage, 0, name);
+            *generator->module, type_p, false,
+            llvm::GlobalValue::ExternalLinkage, 0, name);
     } else {
         return generator->builder.CreateAlloca(
-            llvm::Type::getInt32Ty(generator->context));
+            type_p, nullptr, name);
     }
 }
 

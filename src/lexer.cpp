@@ -43,8 +43,8 @@ Token Lexer::get_token() {
         token.value = str;
         if (str == "def") {
             token.type = T_DEF;
-        } else if (str == "var") {
-            token.type = T_VAR;
+        } else if (str == "int" || str == "char") {
+            token.type = T_TYPE;
         } else {
             token.type = T_IDENTIFIER;
         }

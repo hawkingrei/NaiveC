@@ -89,12 +89,46 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
 }
 
 std::unique_ptr<DeclareAST> Parser::parse_declare() {
-    ++token_it; // remove 'var'
+    std::string type = token_it->value;
+    ++token_it; // remove type
+
     if (token_it->type != T_IDENTIFIER) {
         return nullptr;
     }
 
-    auto ret = std::make_unique<DeclareAST>(token_it->value);
+    std::string id_name = token_it->value;
+
+    ++token_it; // remove identifier
+
+    if (token_it->type == T_SEMICOLON) {
+        ++token_it;
+        return std::make_unique<DeclareAST>(type, id_name);
+    }
+
+    if (token_it->type != T_SQUARE_L) {
+        throw std::exception();
+    }
+
+    ++token_it; // remove '['
+
+    if (token_it->type != T_NUMBER) {
+        throw std::exception();
+    }
+
+    int array_length = std::stoi(token_it->value);
+    ++token_it;
+
+    if (token_it->type != T_SQUARE_R) {
+        throw std::exception();
+    }
+
+    ++token_it; // remove ']'
+
+    if (token_it->type != T_SEMICOLON) {
+        throw std::exception();
+    }
+
+    auto ret = std::make_unique<DeclareAST>(type, id_name, true, array_length);
     ++token_it;
 
     return std::move(ret);
@@ -224,7 +258,6 @@ void Parser::handle_global_declare() {
 }
 
 void Parser::main_loop() {
-    ++token_it;
     while (token_it != tokens.end()) {
         switch (token_it->type) {
             case T_EOF:
@@ -235,7 +268,7 @@ void Parser::main_loop() {
             case T_DEF:
                 handle_definition();
                 break;
-            case T_VAR:
+            case T_TYPE:
                 handle_global_declare();
                 break;
             default:
