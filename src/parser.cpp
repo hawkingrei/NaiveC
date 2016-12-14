@@ -18,6 +18,8 @@ inline void Parser::assert_token(TokenType token_type) throw() {
 
     // TODO:
     std::cerr << "Should be token " << token_type << std::endl;
+    std::cerr << "Here is " << token_it->type << std::endl;
+    std::cerr << std::endl;
     throw std::exception();
 }
 
@@ -171,27 +173,27 @@ std::unique_ptr<ExprAST> Parser::parse_expr() {
 }
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
-    assert_token(T_IDENTIFIER);
+    assert_token(T_TYPE);
+    std::string ret_type = token_it->value;
+    ++token_it;
 
+    assert_token(T_IDENTIFIER);
     std::string fn_name = token_it->value;
     ++token_it;
 
     assert_token(T_PAREN_L);
-
     std::vector<std::string> arg_names;
     while ((++token_it)->type == T_IDENTIFIER) {
         arg_names.push_back(token_it->value);
     }
 
     assert_token(T_PAREN_R);
-
     ++token_it;
 
-    return std::make_unique<PrototypeAST>(fn_name, std::move(arg_names));
+    return std::make_unique<PrototypeAST>(ret_type, fn_name, std::move(arg_names));
 }
 
 std::unique_ptr<FunctionAST> Parser::parse_definition() {
-    ++token_it;
     std::unique_ptr<PrototypeAST> proto = parse_prototype();
     if (!proto) {
         return nullptr;
@@ -204,27 +206,8 @@ std::unique_ptr<FunctionAST> Parser::parse_definition() {
     return nullptr;
 }
 
-std::unique_ptr<FunctionAST> Parser::parse_top_level_expr() {
-    if (auto expr = parse_expr()) {
-        auto proto = std::make_unique<PrototypeAST>("__anon_expr", std::vector<std::string>());
-        return std::make_unique<FunctionAST>(std::move(proto), std::move(expr));
-    }
-
-    return nullptr;
-}
-
 void Parser::handle_definition() {
     if (auto fn_ast = parse_definition()) {
-        if (auto fn_ir = fn_ast->code_gen()) {
-            fn_ir->dump();
-        }
-    } else {
-        ++token_it;
-    }
-}
-
-void Parser::handle_top_level_expr() {
-    if (auto fn_ast = parse_top_level_expr()) {
         if (auto fn_ir = fn_ast->code_gen()) {
             fn_ir->dump();
         }
@@ -245,21 +228,15 @@ void Parser::handle_global_declare() {
 }
 
 void Parser::main_loop() {
-    while (token_it != tokens.end()) {
-        switch (token_it->type) {
-            case T_EOF:
-                return;
-            case T_SEMICOLON:
-                ++token_it;
-                break;
-            case T_DEF:
+    // lookahead 3 characters
+    while (tokens.end() - token_it > 2) {
+        assert_token(T_TYPE);
+        switch ((token_it + 2)->type) {
+            case T_PAREN_L:
                 handle_definition();
                 break;
-            case T_TYPE:
-                handle_global_declare();
-                break;
             default:
-                handle_top_level_expr();
+                handle_global_declare();
                 break;
         }
     }

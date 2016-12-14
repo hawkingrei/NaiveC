@@ -60,7 +60,7 @@ llvm::Value* CallExprAST::code_gen() {
 
 llvm::Function* PrototypeAST::code_gen() {
     std::vector<llvm::Type*> values(args.size(), llvm::Type::getInt32Ty(generator->context));
-    llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getInt32Ty(generator->context), values, false);
+    llvm::FunctionType* ft = llvm::FunctionType::get(generator->type_map[ret_type], values, false);
     llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, generator->module.get());
 
     unsigned idx = 0;

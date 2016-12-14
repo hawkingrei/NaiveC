@@ -92,12 +92,14 @@ public:
 
 class PrototypeAST {
 private:
+    std::string ret_type;
     std::string name;
     std::vector<std::string> args;
 
 public:
-    PrototypeAST(const std::string& name, std::vector<std::string> args)
-        : name(name), args(args) {}
+    PrototypeAST(const std::string& ret_type, const std::string& name,
+                 std::vector<std::string> args)
+        : ret_type(ret_type), name(name), args(args) {}
 
     llvm::Function* code_gen();
 
@@ -148,13 +150,9 @@ public:
 
     std::unique_ptr<FunctionAST> parse_definition();
 
-    std::unique_ptr<FunctionAST> parse_top_level_expr();
-
     void handle_definition();
 
     void handle_global_declare();
-
-    void handle_top_level_expr();
 
     void main_loop();
 
