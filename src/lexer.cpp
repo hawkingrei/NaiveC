@@ -45,6 +45,8 @@ Token Lexer::get_token() {
             token.type = T_DEF;
         } else if (str == "int" || str == "char") {
             token.type = T_TYPE;
+        } else if (str == "return") {
+            token.type = T_RETURN;
         } else {
             token.type = T_IDENTIFIER;
         }

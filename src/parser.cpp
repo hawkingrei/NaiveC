@@ -18,7 +18,7 @@ inline void Parser::assert_token(TokenType token_type) throw() {
 
     // TODO:
     std::cerr << "Should be token " << token_type << std::endl;
-    std::cerr << "Here is " << token_it->type << std::endl;
+    std::cerr << "Here is " << *token_it << std::endl;
     std::cerr << std::endl;
     throw std::exception();
 }
@@ -94,7 +94,7 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
     }
 }
 
-std::unique_ptr<DeclareAST> Parser::parse_declare() {
+std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
     std::string type = token_it->value;
     ++token_it; // remove type
 
@@ -108,7 +108,7 @@ std::unique_ptr<DeclareAST> Parser::parse_declare() {
 
     if (token_it->type == T_SEMICOLON) {
         ++token_it;
-        return std::make_unique<DeclareAST>(type, id_name);
+        return std::make_unique<DeclareStatementAST>(type, id_name);
     }
 
     assert_token(T_SQUARE_L);
@@ -122,11 +122,9 @@ std::unique_ptr<DeclareAST> Parser::parse_declare() {
     ++token_it; // remove ']'
 
     assert_token(T_SEMICOLON);
-
-    auto ret = std::make_unique<DeclareAST>(type, id_name, true, array_length);
     ++token_it;
 
-    return std::move(ret);
+    return std::make_unique<DeclareStatementAST>(type, id_name, true, array_length);
 }
 
 int Parser::get_token_prec() {
@@ -172,6 +170,36 @@ std::unique_ptr<ExprAST> Parser::parse_expr() {
     return parse_bin_op_right(0, std::move(left));
 }
 
+std::unique_ptr<StatementAST> Parser::parse_statement() {
+    if (token_it->type == T_TYPE) {
+        return parse_declare();
+    }
+
+    if (token_it->type == T_RETURN) {
+        ++token_it;
+        std::unique_ptr<ExprAST> expr = parse_expr();
+
+        assert_token(T_SEMICOLON);
+        ++token_it;
+        return std::make_unique<ReturnStatementAST>(std::move(expr));
+    }
+
+    std::unique_ptr<ExprAST> expr1 = parse_expr();
+
+    if (token_it->type != T_ASSIGN) {
+        return nullptr;
+    }
+
+    ++token_it; // remove '='
+
+    std::unique_ptr<ExprAST> expr2 = parse_expr();
+
+    assert_token(T_SEMICOLON);
+    ++token_it;
+
+    return std::make_unique<AssignStatementAST>(std::move(expr1), std::move(expr2));
+}
+
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
     assert_token(T_TYPE);
     std::string ret_type = token_it->value;
@@ -199,11 +227,21 @@ std::unique_ptr<FunctionAST> Parser::parse_definition() {
         return nullptr;
     }
 
-    if (std::unique_ptr<ExprAST> expr = parse_expr()) {
-        return std::make_unique<FunctionAST>(std::move(proto), std::move(expr));
+    assert_token(T_CURLY_L);
+    ++token_it; // remove '{'
+
+    std::vector<std::unique_ptr<StatementAST>> body;
+
+    while (token_it->type != T_CURLY_R) {
+        auto statement = parse_statement();
+        if (statement) {
+            body.push_back(std::move(statement));
+        }
     }
 
-    return nullptr;
+    ++token_it; // remove '}'
+
+    return std::make_unique<FunctionAST>(std::move(proto), std::move(body));
 }
 
 void Parser::handle_definition() {

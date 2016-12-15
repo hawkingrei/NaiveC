@@ -70,7 +70,26 @@ public:
     virtual llvm::Value* code_gen() override;
 };
 
-class DeclareAST {
+class StatementAST {
+public:
+    virtual ~StatementAST() {}
+
+    virtual llvm::Value* code_gen() = 0;
+};
+
+class AssignStatementAST : public StatementAST {
+private:
+    std::unique_ptr<ExprAST> expr_l;
+    std::unique_ptr<ExprAST> expr_r;
+
+public:
+    AssignStatementAST(std::unique_ptr<ExprAST>&& expr_l, std::unique_ptr<ExprAST>&& expr_r)
+        : expr_l(std::move(expr_l)), expr_r(std::move(expr_r)) {}
+
+    virtual llvm::Value* code_gen() override;
+};
+
+class DeclareStatementAST : public StatementAST {
 private:
     std::string type;
     std::string name;
@@ -78,7 +97,7 @@ private:
     size_t array_length;
     bool is_global;
 public:
-    DeclareAST(std::string type, const std::string& name, bool is_array = false,
+    DeclareStatementAST(std::string type, const std::string& name, bool is_array = false,
                size_t array_length = 0, bool is_global = false)
         : type(type), name(name), is_array(is_array),
           array_length(array_length), is_global(is_global) {}
@@ -87,7 +106,17 @@ public:
         is_global = g;
     }
 
-    llvm::Value* code_gen();
+    virtual llvm::Value* code_gen() override;
+};
+
+class ReturnStatementAST : public StatementAST {
+private:
+    std::unique_ptr<ExprAST> expr;
+public:
+    ReturnStatementAST(std::unique_ptr<ExprAST>&& expr)
+        : expr(std::move(expr)) {}
+
+    virtual llvm::Value* code_gen() override;
 };
 
 class PrototypeAST {
@@ -110,10 +139,10 @@ public:
 
 class FunctionAST {
     std::unique_ptr<PrototypeAST> proto;
-    std::unique_ptr<ExprAST> body;
+    std::vector<std::unique_ptr<StatementAST>> body;
 
 public:
-    FunctionAST(std::unique_ptr<PrototypeAST>&& proto, std::unique_ptr<ExprAST>&& body)
+    FunctionAST(std::unique_ptr<PrototypeAST>&& proto, std::vector<std::unique_ptr<StatementAST>>&& body)
         : proto(std::move(proto)), body(std::move(body)) {}
 
     llvm::Function* code_gen();
@@ -144,7 +173,9 @@ public:
 
     std::unique_ptr<ExprAST> parse_bin_op_right(int, std::unique_ptr<ExprAST>);
 
-    std::unique_ptr<DeclareAST> parse_declare();
+    std::unique_ptr<StatementAST> parse_statement();
+
+    std::unique_ptr<DeclareStatementAST> parse_declare();
 
     std::unique_ptr<PrototypeAST> parse_prototype();
 

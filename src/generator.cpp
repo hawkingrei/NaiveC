@@ -71,20 +71,34 @@ llvm::Function* PrototypeAST::code_gen() {
     return f;
 }
 
-llvm::Value* DeclareAST::code_gen() {
+llvm::Value* DeclareStatementAST::code_gen() {
     llvm::Type* type_p = generator->type_map[type];
     if (is_array) {
         type_p = llvm::ArrayType::get(type_p, array_length);
     }
 
+    llvm::Value* var;
+
     if (is_global) {
-        return new llvm::GlobalVariable(
+        var = new llvm::GlobalVariable(
             *generator->module, type_p, false,
             llvm::GlobalValue::ExternalLinkage, 0, name);
     } else {
-        return generator->builder.CreateAlloca(
+        var = generator->builder.CreateAlloca(
             type_p, nullptr, name);
     }
+
+    generator->symbol_table[name] = var;
+
+    return var;
+}
+
+llvm::Value* AssignStatementAST::code_gen() {
+    return generator->builder.CreateStore(expr_r->code_gen(), expr_l->code_gen());
+}
+
+llvm::Value* ReturnStatementAST::code_gen() {
+    return generator->builder.CreateRet(expr->code_gen());
 }
 
 llvm::Function* FunctionAST::code_gen() {
@@ -105,12 +119,10 @@ llvm::Function* FunctionAST::code_gen() {
         generator->symbol_table[arg.getName()] = &arg;
     }
 
-    if (llvm::Value* ret = body->code_gen()) {
-        generator->builder.CreateRet(ret);
-        llvm::verifyFunction(*function);
-        return function;
+    for (const auto& stat: body) {
+        stat->code_gen();
     }
 
-    function->eraseFromParent();
-    return nullptr;
+    llvm::verifyFunction(*function);
+    return function;
 }
