@@ -14,7 +14,7 @@ llvm::Value* NumberExprAST::code_gen() {
 llvm::Value* VariableExprAST::code_gen() {
     llvm::Value* v = Generator::instance()->symbol_table[name];
     // TODO: error
-    return v;
+    return generator->builder.CreateLoad(v, name);
 }
 
 llvm::Value* BinaryExprAST::code_gen() {
@@ -72,29 +72,22 @@ llvm::Function* PrototypeAST::code_gen() {
 }
 
 llvm::Value* DeclareStatementAST::code_gen() {
+    llvm::Function* f = generator->builder.GetInsertBlock()->getParent();
+
     llvm::Type* type_p = generator->type_map[type];
     if (is_array) {
         type_p = llvm::ArrayType::get(type_p, array_length);
     }
 
-    llvm::Value* var;
-
-    if (is_global) {
-        var = new llvm::GlobalVariable(
-            *generator->module, type_p, false,
-            llvm::GlobalValue::ExternalLinkage, 0, name);
-    } else {
-        var = generator->builder.CreateAlloca(
-            type_p, nullptr, name);
-    }
-
+    llvm::AllocaInst* var = generator->create_entry_block_alloca(f, type_p, name);
+    generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
     generator->symbol_table[name] = var;
 
     return var;
 }
 
 llvm::Value* AssignStatementAST::code_gen() {
-    return generator->builder.CreateStore(expr_r->code_gen(), expr_l->code_gen());
+    return generator->builder.CreateStore(expr_r->code_gen(), generator->symbol_table[var_name]);
 }
 
 llvm::Value* ReturnStatementAST::code_gen() {
@@ -115,8 +108,13 @@ llvm::Function* FunctionAST::code_gen() {
     generator->builder.SetInsertPoint(block);
 
     generator->symbol_table.clear();
+
     for (auto& arg: function->args()) {
-        generator->symbol_table[arg.getName()] = &arg;
+        llvm::AllocaInst* alloca = generator->create_entry_block_alloca(
+            function, generator->type_map["int"], proto->get_name());
+        generator->builder.CreateStore(&arg, alloca);
+
+        generator->symbol_table[arg.getName()] = alloca;
     }
 
     for (const auto& stat: body) {

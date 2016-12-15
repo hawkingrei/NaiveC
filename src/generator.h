@@ -34,7 +34,7 @@ public:
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder;
     std::unique_ptr<llvm::Module> module;
-    std::map<std::string, llvm::Value*> symbol_table;
+    std::map<std::string, llvm::AllocaInst*> symbol_table;
     std::map<std::string, llvm::Type*> type_map;
 
     Generator(const Generator&) = delete;
@@ -51,6 +51,12 @@ public:
         }
 
         return _instance;
+    }
+
+    llvm::AllocaInst* create_entry_block_alloca(
+        llvm::Function* f, llvm::Type* type_p, const std::string& var_name) {
+        llvm::IRBuilder<> tmp_builder(&f->getEntryBlock(), f->getEntryBlock().begin());
+        return tmp_builder.CreateAlloca(type_p, nullptr, var_name);
     }
 };
 

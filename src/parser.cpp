@@ -186,18 +186,21 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
 
     std::unique_ptr<ExprAST> expr1 = parse_expr();
 
+    std::string var_name = token_it->value;
+    ++token_it;
+
     if (token_it->type != T_ASSIGN) {
         return nullptr;
     }
 
     ++token_it; // remove '='
 
-    std::unique_ptr<ExprAST> expr2 = parse_expr();
+    std::unique_ptr<ExprAST> expr_r = parse_expr();
 
     assert_token(T_SEMICOLON);
     ++token_it;
 
-    return std::make_unique<AssignStatementAST>(std::move(expr1), std::move(expr2));
+    return std::make_unique<AssignStatementAST>(var_name, std::move(expr_r));
 }
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {

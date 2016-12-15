@@ -79,12 +79,12 @@ public:
 
 class AssignStatementAST : public StatementAST {
 private:
-    std::unique_ptr<ExprAST> expr_l;
+    std::string var_name;
     std::unique_ptr<ExprAST> expr_r;
 
 public:
-    AssignStatementAST(std::unique_ptr<ExprAST>&& expr_l, std::unique_ptr<ExprAST>&& expr_r)
-        : expr_l(std::move(expr_l)), expr_r(std::move(expr_r)) {}
+    AssignStatementAST(const std::string& var_name, std::unique_ptr<ExprAST>&& expr_r)
+        : var_name(var_name), expr_r(std::move(expr_r)) {}
 
     virtual llvm::Value* code_gen() override;
 };
