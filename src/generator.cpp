@@ -157,7 +157,7 @@ llvm::Value* ForStatementAST::code_gen() {
     if (!start_v)
         return nullptr;
 
-    llvm::AllocaInst *var_alloca = generator->symbol_table[var_name];
+    generator->symbol_table[var_name];
 
     llvm::Function *function = generator->builder.GetInsertBlock()->getParent();
     llvm::BasicBlock *loop_start_b =
@@ -181,7 +181,7 @@ llvm::Value* ForStatementAST::code_gen() {
             stat->code_gen();
         }
     }
-    llvm::Value *step_v = step->code_gen();
+    step->code_gen();
     generator->builder.CreateBr(loop_start_b);
     generator->builder.SetInsertPoint(loop_end_b);
     return nullptr;
