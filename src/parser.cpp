@@ -210,6 +210,10 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
         return parse_if_statement();
     }
 
+    if (token_it->type == T_FOR) {
+        return parse_for_statement();
+    }
+
     std::string var_name = token_it->value;
     ++token_it;
 
@@ -250,6 +254,8 @@ std::unique_ptr<StatementAST> Parser::parse_if_statement() {
 
     return std::make_unique<IfStatementAST>(std::move(cond), std::move(if_block), std::move(else_block));
 }
+
+std::unique_ptr<StatementAST> Parser
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
     assert_token(T_TYPE);

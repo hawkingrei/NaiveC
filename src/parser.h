@@ -148,6 +148,11 @@ public:
     virtual llvm::Value* code_gen() override;
 };
 
+class ForStatementAST : public StatementAST {
+private:
+    std::unique_ptr<ExperAST>
+};
+
 class PrototypeAST {
 private:
     std::string ret_type;
@@ -215,6 +220,8 @@ public:
     std::unique_ptr<StatementAST> parse_statement();
 
     std::unique_ptr<StatementAST> parse_if_statement();
+
+    std::unique_ptr<StatementAST> parse_for_statement();
 
     std::unique_ptr<DeclareStatementAST> parse_declare();
 

@@ -51,6 +51,8 @@ Token Lexer::get_token() {
             token.type = T_IF;
         } else if (str == "else") {
             token.type = T_ELSE;
+        } else if (str == "for") {
+            token.type = T_FOR;
         } else {
             token.type = T_IDENTIFIER;
         }
