@@ -98,6 +98,15 @@ Token Lexer::get_token() {
         token.type = T_COMMA;
         token.value.push_back(content[ptr]);
         ++ptr;
+    } else if (content[ptr] == '"') {
+        do {
+            str += content[ptr];
+            ++ptr;
+        } while (content[ptr] != '"');
+
+        ++ptr;
+        token.type = T_STR;
+        token.value = str.substr(1);
     } else {
         // TODO: exception
         std::cout << (char)content[ptr];

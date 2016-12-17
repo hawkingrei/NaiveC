@@ -8,7 +8,19 @@
 static Generator* generator = Generator::instance();
 
 llvm::Value* NumberExprAST::code_gen() {
-    return llvm::ConstantInt::get(Generator::instance()->context, llvm::APInt(32, (uint64_t) value, true));
+    return llvm::ConstantInt::get(generator->context, llvm::APInt(32, (uint64_t) value, true));
+}
+
+llvm::Value* StrAST::code_gen() {
+    auto str = llvm::ConstantDataArray::getString(generator->context, content.c_str());
+    llvm::Type* type_p = generator->type_map["char"];
+    type_p = llvm::ArrayType::get(type_p, content.size() + 1);
+
+    llvm::AllocaInst* alloca = generator->builder.CreateAlloca(type_p);
+    generator->builder.CreateStore(str, alloca);
+    llvm::Value* value = generator->builder.CreateBitCast(alloca, llvm::Type::getInt8PtrTy(generator->context));
+
+    return value;
 }
 
 llvm::Value* VariableExprAST::code_gen() {
@@ -43,6 +55,7 @@ llvm::Value* BinaryExprAST::code_gen() {
 
 llvm::Value* CallExprAST::code_gen() {
     llvm::Function* callee_f = generator->module->getFunction(callee);
+
     if (!callee_f) {
         throw std::exception();
     }

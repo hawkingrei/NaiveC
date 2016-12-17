@@ -40,6 +40,16 @@ public:
     virtual llvm::Value* code_gen() override;
 };
 
+class StrAST : public ExprAST {
+private:
+    std::string content;
+public:
+    StrAST(const std::string& content)
+        : content(content) {}
+
+    virtual llvm::Value* code_gen() override;
+};
+
 class VariableExprAST : public ExprAST {
 private:
     std::string name;
@@ -195,6 +205,8 @@ public:
     std::unique_ptr<ExprAST> parse_paren_expr();
 
     std::unique_ptr<ExprAST> parse_identifier_expr();
+
+    std::unique_ptr<ExprAST> parse_str_expr();
 
     std::unique_ptr<ExprAST> parse_primary();
 

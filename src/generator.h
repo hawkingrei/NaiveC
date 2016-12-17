@@ -28,11 +28,23 @@ private:
                   module(std::make_unique<llvm::Module>("jit", context)),
                   type_map({{"int",  llvm::Type::getInt32Ty(context)},
                             {"char", llvm::Type::getInt8Ty(context)},
-                           }) {}
+                           }) {
+
+        std::vector<llvm::Type *> puts_args;
+        puts_args.push_back(builder.getInt8Ty()->getPointerTo());
+        llvm::ArrayRef<llvm::Type*>  argsRef(puts_args);
+
+        llvm::FunctionType *puts_type =
+            llvm::FunctionType::get(builder.getInt32Ty(), argsRef, true);
+
+        llvm::Function* function = llvm::Function::Create(puts_type, llvm::Function::ExternalLinkage, "printf", module.get());
+        function->dump();
+    }
 
 public:
     llvm::LLVMContext context;
     llvm::IRBuilder<> builder;
+    llvm::Constant* puts_func;
     std::unique_ptr<llvm::Module> module;
     std::map<std::string, llvm::AllocaInst*> symbol_table;
     std::map<std::string, llvm::Type*> type_map;

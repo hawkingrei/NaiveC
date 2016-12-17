@@ -79,6 +79,12 @@ std::unique_ptr<ExprAST> Parser::parse_identifier_expr() {
     return std::make_unique<CallExprAST>(id_name, std::move(args));
 }
 
+std::unique_ptr<ExprAST> Parser::parse_str_expr() {
+    const std::string content = token_it->value;
+    ++token_it;
+    return std::make_unique<StrAST>(content);
+}
+
 std::unique_ptr<ExprAST> Parser::parse_primary() {
     switch (token_it->type) {
         case T_IDENTIFIER:
@@ -87,6 +93,8 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
             return parse_number_expr();
         case T_PAREN_L:
             return parse_paren_expr();
+        case T_STR:
+            return parse_str_expr();
         default:
             // TODO
             std::cerr << *token_it << std::endl;
