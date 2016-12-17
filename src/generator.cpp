@@ -34,7 +34,7 @@ llvm::Value* BinaryExprAST::code_gen() {
             return generator->builder.CreateMul(l, r, "multmp");
         case '<':
             l = generator->builder.CreateICmpULT(l, r, "cmptmp");
-            return generator->builder.CreateUIToFP(
+            return generator->builder.CreateSExt(
                 l, llvm::Type::getInt32Ty(generator->context), "booltmp");
         default:
             return nullptr;
@@ -92,6 +92,63 @@ llvm::Value* AssignStatementAST::code_gen() {
 
 llvm::Value* ReturnStatementAST::code_gen() {
     return generator->builder.CreateRet(expr->code_gen());
+}
+
+llvm::Value* IfStatementAST::code_gen() {
+    llvm::Value* cond_v = cond->code_gen();
+
+    if (!cond_v) {
+        return nullptr;
+    }
+
+    cond_v = generator->builder.CreateICmpNE(
+        cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "ifcond");
+
+    llvm::Function* function = generator->builder.GetInsertBlock()->getParent();
+
+    llvm::BasicBlock* if_basic_block = llvm::BasicBlock::Create(generator->context, "if", function);
+    llvm::BasicBlock* else_basic_block = llvm::BasicBlock::Create(generator->context, "else", function);
+    llvm::BasicBlock* merge_basic_block = llvm::BasicBlock::Create(generator->context, "ifcont", function);
+
+    generator->builder.CreateCondBr(cond_v, if_basic_block, else_basic_block);
+    generator->builder.SetInsertPoint(if_basic_block);
+
+    std::vector<llvm::Value*> if_values;
+
+    for (const auto& stat: if_block->statements) {
+        if_values.push_back(stat->code_gen());
+    }
+
+    generator->builder.CreateBr(merge_basic_block);
+
+    function->getBasicBlockList().push_back(else_basic_block);
+    generator->builder.SetInsertPoint(else_basic_block);
+
+    std::vector<llvm::Value*> else_values;
+    if (else_block) {
+        for (const auto& stat: else_block->statements) {
+            else_values.push_back(stat->code_gen());
+        }
+    }
+
+    generator->builder.CreateBr(merge_basic_block);
+
+    function->getBasicBlockList().push_back(merge_basic_block);
+    generator->builder.SetInsertPoint(merge_basic_block);
+
+    return nullptr;
+}
+
+llvm::BasicBlock* CodeBlockAST::code_gen() {
+    llvm::BasicBlock* old_block = generator->builder.GetInsertBlock();
+    llvm::Function* function = old_block->getParent();
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(generator->context, "b", function);
+    generator->builder.SetInsertPoint(block);
+    for (const auto& stat : statements) {
+        stat->code_gen();
+    }
+    generator->builder.SetInsertPoint(old_block);
+    return block;
 }
 
 llvm::Function* FunctionAST::code_gen() {

@@ -22,6 +22,8 @@
 #include <llvm/IR/Verifier.h>
 #include "lexer.h"
 
+class CodeBlockAST;
+
 class ExprAST {
 public:
     virtual llvm::Value* code_gen() = 0;
@@ -98,7 +100,7 @@ private:
     bool is_global;
 public:
     DeclareStatementAST(std::string type, const std::string& name, bool is_array = false,
-               size_t array_length = 0, bool is_global = false)
+                        size_t array_length = 0, bool is_global = false)
         : type(type), name(name), is_array(is_array),
           array_length(array_length), is_global(is_global) {}
 
@@ -115,6 +117,23 @@ private:
 public:
     ReturnStatementAST(std::unique_ptr<ExprAST>&& expr)
         : expr(std::move(expr)) {}
+
+    virtual llvm::Value* code_gen() override;
+};
+
+class IfStatementAST : public StatementAST {
+private:
+    std::unique_ptr<ExprAST> cond;
+    std::unique_ptr<CodeBlockAST> if_block;
+    std::unique_ptr<CodeBlockAST> else_block;
+public:
+    IfStatementAST(
+        std::unique_ptr<ExprAST>&& cond,
+        std::unique_ptr<CodeBlockAST>&& if_block,
+        std::unique_ptr<CodeBlockAST>&& else_block)
+        : cond(std::move(cond)),
+          if_block(std::move(if_block)),
+          else_block(std::move(else_block)) {}
 
     virtual llvm::Value* code_gen() override;
 };
@@ -137,6 +156,15 @@ public:
     }
 };
 
+class CodeBlockAST {
+public:
+    std::vector<std::unique_ptr<StatementAST>> statements;
+    llvm::BasicBlock* code_gen();
+
+    CodeBlockAST(std::vector<std::unique_ptr<StatementAST>>&& statements)
+        : statements(std::move(statements)) {}
+};
+
 class FunctionAST {
     std::unique_ptr<PrototypeAST> proto;
     std::vector<std::unique_ptr<StatementAST>> body;
@@ -147,7 +175,6 @@ public:
 
     llvm::Function* code_gen();
 };
-
 
 class Parser {
 private:
@@ -175,7 +202,11 @@ public:
 
     std::unique_ptr<StatementAST> parse_statement();
 
+    std::unique_ptr<StatementAST> parse_if_statement();
+
     std::unique_ptr<DeclareStatementAST> parse_declare();
+
+    std::unique_ptr<CodeBlockAST> parse_code_block();
 
     std::unique_ptr<PrototypeAST> parse_prototype();
 

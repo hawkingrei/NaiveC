@@ -27,6 +27,8 @@ enum TokenType {
     T_DEF,
     T_RETURN,
     T_VAR,
+    T_IF,
+    T_ELSE,
 };
 
 struct Token {

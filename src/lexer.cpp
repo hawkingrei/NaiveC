@@ -47,6 +47,10 @@ Token Lexer::get_token() {
             token.type = T_TYPE;
         } else if (str == "return") {
             token.type = T_RETURN;
+        } else if (str == "if") {
+            token.type = T_IF;
+        } else if (str == "else") {
+            token.type = T_ELSE;
         } else {
             token.type = T_IDENTIFIER;
         }
@@ -62,7 +66,7 @@ Token Lexer::get_token() {
         } else {
             token.type = T_ASSIGN;
         }
-    } else if (content[ptr] == '+' || content[ptr] == '-' || content[ptr] == '*') {
+    } else if (content[ptr] == '+' || content[ptr] == '-' || content[ptr] == '*' || content[ptr] == '<') {
         token.type = T_OP;
         token.value.push_back(content[ptr]);
         ++ptr;
@@ -96,7 +100,7 @@ Token Lexer::get_token() {
         ++ptr;
     } else {
         // TODO: exception
-        std::cout << (int)content[ptr];
+        std::cout << (char)content[ptr];
         throw std::exception();
     }
 

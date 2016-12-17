@@ -127,6 +127,20 @@ std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
     return std::make_unique<DeclareStatementAST>(type, id_name, true, array_length);
 }
 
+std::unique_ptr<CodeBlockAST> Parser::parse_code_block() {
+    std::vector<std::unique_ptr<StatementAST>> statements;
+    assert_token(T_CURLY_L);
+    ++token_it;
+
+    while (token_it->type != T_CURLY_R) {
+        statements.push_back(parse_statement());
+    }
+
+    ++token_it;
+
+    return std::make_unique<CodeBlockAST>(std::move(statements));
+}
+
 int Parser::get_token_prec() {
     if (token_it->type != T_OP) {
         return -1;
@@ -184,7 +198,9 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
         return std::make_unique<ReturnStatementAST>(std::move(expr));
     }
 
-    std::unique_ptr<ExprAST> expr1 = parse_expr();
+    if (token_it->type == T_IF) {
+        return parse_if_statement();
+    }
 
     std::string var_name = token_it->value;
     ++token_it;
@@ -201,6 +217,30 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
     ++token_it;
 
     return std::make_unique<AssignStatementAST>(var_name, std::move(expr_r));
+}
+
+std::unique_ptr<StatementAST> Parser::parse_if_statement() {
+    assert_token(T_IF);
+    ++token_it;
+
+    assert_token(T_PAREN_L);
+    ++token_it;
+
+    std::unique_ptr<ExprAST> cond = parse_expr();
+
+    assert_token(T_PAREN_R);
+    ++token_it;
+
+    std::unique_ptr<CodeBlockAST> if_block = parse_code_block();
+
+    if (token_it->type != T_ELSE) {
+        return std::make_unique<IfStatementAST>(std::move(cond), std::move(if_block), nullptr);
+    }
+    ++token_it;
+
+    std::unique_ptr<CodeBlockAST> else_block = parse_code_block();
+
+    return std::make_unique<IfStatementAST>(std::move(cond), std::move(if_block), std::move(else_block));
 }
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
