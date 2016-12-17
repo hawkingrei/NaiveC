@@ -160,28 +160,30 @@ llvm::Value* ForStatementAST::code_gen() {
     llvm::AllocaInst *var_alloca = generator->symbol_table[var_name];
 
     llvm::Function *function = generator->builder.GetInsertBlock()->getParent();
-    llvm::BasicBlock *loop_b = llvm::BasicBlock::Create(generator->context, "loop", function);
+    llvm::BasicBlock *loop_start_b =
+            llvm::BasicBlock::Create(generator->context, "loopstart", function);
+    llvm::BasicBlock *loop_body_b =
+            llvm::BasicBlock::Create(generator->context, "loopbody", function);
+    llvm::BasicBlock *loop_end_b =
+            llvm::BasicBlock::Create(generator->context, "loopend", function);
 
-    generator->builder.CreateBr(loop_b);
+    generator->builder.CreateBr(loop_start_b);
 
-    generator->builder.SetInsertPoint(loop_b);
+    generator->builder.SetInsertPoint(loop_start_b);
+    llvm::Value *cond_v = cond->code_gen();
+    cond_v = generator->builder.CreateICmpNE(
+            cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "loopcond");
+    generator->builder.CreateCondBr(cond_v, loop_body_b, loop_end_b);
 
+    generator->builder.SetInsertPoint(loop_body_b);
     if (for_block) {
         for (const auto& stat: for_block->statements) {
             stat->code_gen();
         }
     }
     llvm::Value *step_v = step->code_gen();
-    llvm::Value *cond_v = cond->code_gen();
-//    generator->builder.CreateStore(step->->code_gen(), generator->symbol_table[var_name]);
-    cond_v = generator->builder.CreateICmpNE(
-            cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "loopcond");
-    llvm::BasicBlock *after_b =
-            llvm::BasicBlock::Create(generator->context, "afterloop", function);
-
-    generator->builder.CreateCondBr(cond_v, loop_b, after_b);
-
-    generator->builder.SetInsertPoint(after_b);
+    generator->builder.CreateBr(loop_start_b);
+    generator->builder.SetInsertPoint(loop_end_b);
     return nullptr;
 }
 
