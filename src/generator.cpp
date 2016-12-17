@@ -152,6 +152,39 @@ llvm::Value* IfStatementAST::code_gen() {
     return nullptr;
 }
 
+llvm::Value* ForStatementAST::code_gen() {
+    llvm::Value *start_v = start->code_gen();
+    if (!start_v)
+        return nullptr;
+
+    llvm::AllocaInst *var_alloca = generator->symbol_table[var_name];
+
+    llvm::Function *function = generator->builder.GetInsertBlock()->getParent();
+    llvm::BasicBlock *loop_b = llvm::BasicBlock::Create(generator->context, "loop", function);
+
+    generator->builder.CreateBr(loop_b);
+
+    generator->builder.SetInsertPoint(loop_b);
+
+    if (for_block) {
+        for (const auto& stat: for_block->statements) {
+            stat->code_gen();
+        }
+    }
+    llvm::Value *step_v = step->code_gen();
+    llvm::Value *cond_v = cond->code_gen();
+//    generator->builder.CreateStore(step->->code_gen(), generator->symbol_table[var_name]);
+    cond_v = generator->builder.CreateICmpNE(
+            cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "loopcond");
+    llvm::BasicBlock *after_b =
+            llvm::BasicBlock::Create(generator->context, "afterloop", function);
+
+    generator->builder.CreateCondBr(cond_v, loop_b, after_b);
+
+    generator->builder.SetInsertPoint(after_b);
+    return nullptr;
+}
+
 llvm::BasicBlock* CodeBlockAST::code_gen() {
     llvm::BasicBlock* old_block = generator->builder.GetInsertBlock();
     llvm::Function* function = old_block->getParent();

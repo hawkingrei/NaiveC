@@ -3,6 +3,7 @@
 //
 
 #include "parser.h"
+#include <string>
 
 std::map<char, int> Parser::precedence_map = {
     {'<', 10},
@@ -18,7 +19,7 @@ inline void Parser::assert_token(TokenType token_type) throw() {
 
     // TODO:
     std::cerr << "Should be token " << token_type << std::endl;
-    std::cerr << "Here is " << *token_it << std::endl;
+    std::cerr << "Here is " << token_it->type << " " << token_it->value << std::endl;
     std::cerr << std::endl;
     throw std::exception();
 }
@@ -255,7 +256,46 @@ std::unique_ptr<StatementAST> Parser::parse_if_statement() {
     return std::make_unique<IfStatementAST>(std::move(cond), std::move(if_block), std::move(else_block));
 }
 
-std::unique_ptr<StatementAST> Parser
+std::unique_ptr<StatementAST> Parser::parse_for_ctrl_statement() {
+    assert_token(T_IDENTIFIER);
+    std::string var_name = token_it->value;
+    ++token_it;
+
+    assert_token(T_ASSIGN);
+    ++token_it; // remove '='
+
+    std::unique_ptr<ExprAST> expr_r = parse_expr();
+
+    return std::make_unique<AssignStatementAST>(var_name, std::move(expr_r));
+}
+
+std::unique_ptr<StatementAST> Parser::parse_for_statement() {
+    assert_token(T_FOR);
+    ++token_it; //consume for
+
+    assert_token(T_PAREN_L);
+    ++token_it; //consume (
+
+    assert_token(T_IDENTIFIER);
+    std::string var_name = token_it->value;
+
+    std::unique_ptr<StatementAST> start = parse_for_ctrl_statement();
+    assert_token(T_SEMICOLON);
+    ++token_it; //consume ;
+
+    std::unique_ptr<ExprAST> cond = parse_expr();
+    assert_token(T_SEMICOLON);
+    ++token_it; //consume ;
+
+    std::unique_ptr<StatementAST> step = parse_for_ctrl_statement();
+
+    assert_token(T_PAREN_R);
+    ++token_it; //consume (
+
+    std::unique_ptr<CodeBlockAST> for_block = parse_code_block();
+    return std::make_unique<ForStatementAST>(var_name, std::move(start),
+                                             std::move(cond), std::move(step), std::move(for_block));
+}
 
 std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
     assert_token(T_TYPE);

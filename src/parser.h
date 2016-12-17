@@ -150,7 +150,23 @@ public:
 
 class ForStatementAST : public StatementAST {
 private:
-    std::unique_ptr<ExperAST>
+    std::string var_name;
+    std::unique_ptr<StatementAST> start;
+    std::unique_ptr<ExprAST> cond;
+    std::unique_ptr<StatementAST> step;
+    std::unique_ptr<CodeBlockAST> for_block;
+
+public:
+    ForStatementAST(const std::string& var_name, std::unique_ptr<StatementAST>&& start,
+               std::unique_ptr<ExprAST>&& cond, std::unique_ptr<StatementAST>&& step,
+               std::unique_ptr<CodeBlockAST>&& for_block)
+            : var_name(var_name),
+              start(std::move(start)),
+              cond(std::move(cond)),
+              step(std::move(step)),
+              for_block(std::move(for_block)) {}
+
+    virtual llvm::Value *code_gen() override ;
 };
 
 class PrototypeAST {
@@ -222,6 +238,8 @@ public:
     std::unique_ptr<StatementAST> parse_if_statement();
 
     std::unique_ptr<StatementAST> parse_for_statement();
+
+    std::unique_ptr<StatementAST> parse_for_ctrl_statement();
 
     std::unique_ptr<DeclareStatementAST> parse_declare();
 
