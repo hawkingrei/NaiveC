@@ -42,7 +42,7 @@ int buildnext(char* bup, int* bunext) {
     int tmp;
     tmp = 0;
 
-    for (buj = 0 ;buj < buplen - 1; tmp = tmp + 1) {
+    for (buj = 0; buj < buplen - 1; tmp = tmp + 1) {
         int cmp12345;
         cmp12345 = or(buk == 0 - 1, bup[buj] == bup[buk]);
 
@@ -64,13 +64,11 @@ int buildnext(char* bup, int* bunext) {
     return 0;
 }
 
-int kmpsearch(char* s, char* p, int* next) {
-    int kmpi;
+int kmpsearch(char* s, char* p, int* next, int* kmp_start) {
     int kmpj;
     int kmpslen;
     int kmpplen;
 
-    kmpi = 0;
     kmpj = 0;
     kmpslen = strlen(s, 100);
     kmpplen = strlen(p, 100);
@@ -79,26 +77,26 @@ int kmpsearch(char* s, char* p, int* next) {
     tmp2 = 0;
 
     int cmp12;
-    cmp12 = and(kmpi < kmpslen, kmpj < kmpplen);
+    cmp12 = and(kmp_start[0] < kmpslen, kmpj < kmpplen);
 
-    for (kmpi = 0; cmp12 != 0; tmp2 = tmp2 + 1) {
+    for (kmp_start[0] = kmp_start[0]; cmp12 != 0; tmp2 = tmp2) {
         int cmp4242;
-        cmp4242 = or(kmpj == 0 - 1, s[kmpi] == p[kmpj]);
+        cmp4242 = or(kmpj == 0 - 1, s[kmp_start[0]] == p[kmpj]);
 
         if (cmp4242) {
-            kmpi = kmpi + 1;
+            kmp_start[0] = kmp_start[0] + 1;
             kmpj = kmpj + 1;
         } else {
             kmpj = next[kmpj];
         }
 
-        cmp12 = and(kmpi < kmpslen, kmpj < kmpplen);
+        cmp12 = and(kmp_start[0] < kmpslen, kmpj < kmpplen);
     }
 
     int kmpretval;
 
     if (kmpj == kmpplen) {
-        kmpretval = kmpi - kmpj;
+        kmpretval = kmp_start[0] - kmpj;
     } else {
         kmpretval = (0 - 1);
     }
@@ -116,10 +114,36 @@ int main() {
     gets(mainp);
 
     buildnext(mainp, mainnext);
-    int result;
-    result = kmpsearch(mains, mainp, mainnext);
+    int start[1];
+    start[0] = 0;
 
-    printf("%d", result);
+    int tmp3;
+    int main_n;
+    main_n = strlen(mains, 100);
+    int result;
+    int found;
+    found = 0;
+    result = 0 - 1;
+    int maincond;
+
+    for (tmp3 = 0; start[0] < main_n; tmp3 = tmp3) {
+        result = kmpsearch(mains, mainp, mainnext, start);
+        maincond = and(result != 0 - 1, tmp3 != 0);
+        if (maincond) {
+            printf(",");
+        }
+
+        if (result != 0 - 1) {
+            found = 1;
+            printf("%d", result);
+        }
+
+        tmp3 = 1;
+    }
+
+    if (found == 0) {
+        printf("False\n");
+    }
 
     return 0;
 }
