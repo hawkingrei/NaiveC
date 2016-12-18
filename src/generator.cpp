@@ -60,6 +60,10 @@ llvm::Value* StrAST::code_gen() {
     return value;
 }
 
+llvm::Value* CharAST::code_gen() {
+    return llvm::ConstantInt::get(generator->context, llvm::APInt(8, (uint64_t)value, true));
+}
+
 llvm::Value* VariableExprAST::code_gen() {
     llvm::Value* v = Generator::instance()->symbol_table[name];
     if (is_array) {

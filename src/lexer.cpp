@@ -132,7 +132,9 @@ Token Lexer::get_token() {
         ptr += 2;
     } else if (content[ptr] == '\''){
         token.type = T_CHAR;
-        token.value.push_back(get_char());
+        ++ptr;
+        token.value.push_back(content[ptr]);
+        ++ptr;
         if (content[ptr] != '\'') {
             std::cout << (char)content[ptr];
             throw std::exception();
