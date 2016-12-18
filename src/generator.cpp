@@ -74,6 +74,7 @@ llvm::Value* CharAST::code_gen() {
 
 llvm::Value* VariableExprAST::code_gen() {
     llvm::Value* v = Generator::instance()->symbol_table[name];
+
     if (is_array) {
         llvm::Value* index_v = index->code_gen();
         llvm::Value* gep_v = get_ptr_of_value(v, index_v);
@@ -100,10 +101,13 @@ llvm::Value* VariableExprAST::get_ref() {
 }
 
 llvm::Value* VariableExprAST::get_ptr_of_value(llvm::Value *v, llvm::Value *index) {
+//    if (generator->symbol_type_table[name] == parser::POINTER) {
+//        return generator->builder.CreateGEP(v, index);
+//    }
     std::vector<llvm::Value*> indexes;
     llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
     indexes.push_back(zero);
-    indexes.push_back(index);
+    indexes.push_back(zero);
     return generator->builder.CreateGEP(v, indexes);
 }
 
@@ -154,7 +158,18 @@ llvm::Value* CallExprAST::code_gen() {
 }
 
 llvm::Function* PrototypeAST::code_gen() {
-    std::vector<llvm::Type*> values(args.size(), llvm::Type::getInt32Ty(generator->context));
+//    std::vector<llvm::Type*> values(args.size(), llvm::Type::getInt32Ty(generator->context));
+    std::vector<llvm::Type*> values;
+    for (auto & arg_type: arg_types) {
+        std::string type_str;
+        if (arg_type->form == parser::RAW_TYPE) {
+            type_str = arg_type->type.type_name;
+        } else {
+            type_str = arg_type->type.raw_type->type.type_name + "ptr";
+        }
+        values.push_back(generator->type_map[type_str]);
+    }
+
     llvm::FunctionType* ft = llvm::FunctionType::get(generator->type_map[ret_type], values, false);
     llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, name, generator->module.get());
 
@@ -172,10 +187,12 @@ llvm::Value* DeclareStatementAST::code_gen() {
 
     if (type_p->form == parser::RAW_TYPE) {
         llvm_type_p = generator->type_map[type_p->type.type_name];
-    } else {
+    } else if (type_p->form == parser::ARRAY) {
         // array
         llvm_type_p = generator->type_map[type_p->type.raw_type->type.type_name];
         llvm_type_p = llvm::ArrayType::get(llvm_type_p, type_p->type.length);
+    } else {
+        llvm_type_p = generator->type_map[type_p->type.raw_type->type.type_name + "ptr"];
     }
 
     llvm::AllocaInst* var = nullptr;
@@ -185,7 +202,7 @@ llvm::Value* DeclareStatementAST::code_gen() {
         generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
     }
     generator->symbol_table[var_name] = var;
-    generator->symbol_is_ptr_table[var_name] = type_p->form != parser::RAW_TYPE;
+    generator->symbol_is_ptr_table[var_name] = type_p->form;
 
     return var;
 }
@@ -253,7 +270,7 @@ llvm::Value* ForStatementAST::code_gen() {
         return nullptr;
     }
 
-    generator->symbol_table[var_name];
+//    generator->symbol_table[var_name];
 
     llvm::Function* function = generator->builder.GetInsertBlock()->getParent();
     llvm::BasicBlock* loop_start_b =
@@ -309,13 +326,24 @@ llvm::Function* FunctionAST::code_gen() {
     generator->builder.SetInsertPoint(block);
 
     generator->symbol_table.clear();
-
+    size_t  idx= 0;
     for (auto& arg: function->args()) {
+        auto& arg_type = proto->arg_types[idx];
+        std::string type_str;
+        if (arg_type->form == parser::RAW_TYPE) {
+            type_str = arg_type->type.type_name;
+        } else {
+            type_str = arg_type->type.raw_type->type.type_name + "ptr";
+        }
+        ++idx;
+        llvm::Type* type_v = generator->type_map[type_str];
+
         llvm::AllocaInst* alloca = generator->create_entry_block_alloca(
-            function, generator->type_map["int"], proto->get_name());
+            function, type_v, proto->get_name());
         generator->builder.CreateStore(&arg, alloca);
 
         generator->symbol_table[arg.getName()] = alloca;
+        generator->symbol_type_table[arg.getName()] = arg_type->form;
     }
 
     for (const auto& stat: body) {

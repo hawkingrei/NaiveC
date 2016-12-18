@@ -119,18 +119,27 @@ std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
     std::string type_name = token_it->value;
     ++token_it; // remove type
 
+    bool ptr_flag = false;
+    if (token_it->type == T_STR) {
+        ptr_flag = true;
+        ++token_it; // consume *;
+    }
     if (token_it->type != T_IDENTIFIER) {
         return nullptr;
     }
 
     std::string id_name = token_it->value;
-
     ++token_it; // remove identifier
 
     if (token_it->type == T_SEMICOLON) {
         ++token_it;
-        auto type_p = std::make_unique<VarType>(type_name);
-        return std::make_unique<DeclareStatementAST>(std::move(type_p), id_name);
+        if (ptr_flag) {
+            auto raw_type_p = std::make_unique<VarType>(type_name);
+            return std::make_unique<DeclareStatementAST>(std::make_unique<VarType>(std::move(raw_type_p), 0), id_name);
+        } else {
+            auto type_p = std::make_unique<VarType>(type_name);
+            return std::make_unique<DeclareStatementAST>(std::move(type_p), id_name);
+        }
     }
 
     assert_token(T_SQUARE_L);
@@ -331,15 +340,38 @@ std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
     ++token_it;
 
     assert_token(T_PAREN_L);
+    ++token_it;
+    std::vector<std::unique_ptr<parser::VarType>> arg_types;
     std::vector<std::string> arg_names;
-    while ((++token_it)->type == T_IDENTIFIER) {
-        arg_names.push_back(token_it->value);
+
+    while (token_it->type == T_TYPE) {
+        std::string type_name = token_it->value;
+        ++token_it;
+
+        bool ptr_flag = false;
+        if (token_it->type == T_STAR) {
+            ++token_it;
+            ptr_flag = true;
+        }
+
+        std::string arg_name = token_it->value;
+        arg_names.push_back(arg_name);
+        ++token_it;
+        if (ptr_flag) {
+            auto raw_type_p = std::make_unique<VarType>(type_name);
+            arg_types.push_back(std::make_unique<VarType>(std::move(raw_type_p), 0));
+        } else {
+            arg_types.push_back(std::make_unique<VarType>(type_name));
+        }
+
+        if (token_it->type == T_COMMA)
+            ++token_it;
     }
 
     assert_token(T_PAREN_R);
     ++token_it;
 
-    return std::make_unique<PrototypeAST>(ret_type, fn_name, std::move(arg_names));
+    return std::make_unique<PrototypeAST>(ret_type, fn_name, std::move(arg_types), std::move(arg_names));
 }
 
 std::unique_ptr<VariableExprAST> Parser::parse_variable_expr() {
@@ -418,8 +450,11 @@ void Parser::handle_global_declare() {
 
 void Parser::main_loop() {
     // lookahead 3 characters
+//    int id = 0;
+//    std::cout << "Begin" << std::endl;
     while (tokens.end() - token_it > 2) {
         assert_token(T_TYPE);
+//        std::cout << id << std::endl;
         switch ((token_it + 2)->type) {
             case T_PAREN_L:
                 handle_definition();

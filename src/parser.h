@@ -49,6 +49,7 @@ struct VarType {
 
     VarType(std::unique_ptr<VarType>&& raw_type, size_t length = 0) {
         type.length = length;
+        type.type_name = raw_type->type.type_name;
         type.raw_type = std::move(raw_type);
         form = (length == 0) ? POINTER : ARRAY;
     }
@@ -230,12 +231,12 @@ private:
     std::vector<std::string> args;
 
 public:
+    std::vector<std::unique_ptr<parser::VarType>> arg_types;
     PrototypeAST(const std::string& ret_type, const std::string& name,
-                 std::vector<std::string> args)
-        : ret_type(ret_type), name(name), args(args) {}
+                 std::vector<std::unique_ptr<parser::VarType>> arg_types, std::vector<std::string> args)
+        : ret_type(ret_type), name(name), arg_types(std::move(arg_types)), args(args) {}
 
     llvm::Function* code_gen();
-
     inline const std::string& get_name() const {
         return name;
     }

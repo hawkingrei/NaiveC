@@ -20,6 +20,7 @@
 #include <llvm/IR/Verifier.h>
 #include <llvm/Bitcode/ReaderWriter.h>
 #include <llvm/Support/FileSystem.h>
+#include "parser.h"
 
 
 class Generator {
@@ -30,6 +31,8 @@ private:
                   module(std::make_unique<llvm::Module>("jit", context)),
                   type_map({{"int",  llvm::Type::getInt32Ty(context)},
                             {"char", llvm::Type::getInt8Ty(context)},
+                            {"intptr", llvm::Type::getInt32PtrTy(context)},
+                            {"charptr", llvm::Type::getInt8PtrTy(context)}
                            }) {
         extern_printf();
         extern_gets();
@@ -47,6 +50,7 @@ public:
     std::map<std::string, llvm::AllocaInst*> symbol_table;
     std::map<std::string, llvm::Type*> type_map;
     std::map<std::string, bool> symbol_is_ptr_table;
+    std::map<std::string, parser::TypeForm> symbol_type_table;
 
     Generator(const Generator&) = delete;
 

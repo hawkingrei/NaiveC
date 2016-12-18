@@ -18,6 +18,9 @@ char Lexer::get_char() {
         if (content[ptr] == 'n') {
             c = '\n';
             ++ptr;
+        } else if (content[ptr] == '0') {
+            c == '\0';
+            ++ptr;
         } else {
             c = '\\';
         }
