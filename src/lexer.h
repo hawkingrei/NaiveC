@@ -31,6 +31,8 @@ enum TokenType {
     T_ELSE,
     T_STR,
     T_FOR,
+    T_BREAK,
+    T_CHAR,
 };
 
 struct Token {
@@ -46,6 +48,7 @@ private:
     size_t ptr = 0;
 
     Token get_token();
+    char get_char();
 
 public:
     Lexer(std::string&& content) : content(content) {}

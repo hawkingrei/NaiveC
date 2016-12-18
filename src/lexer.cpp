@@ -11,6 +11,22 @@ std::ostream &operator<<(std::ostream &out, Token &t) {
     return out;
 }
 
+char Lexer::get_char() {
+    char c;
+    if (content[ptr] == '\\') {
+        ++ptr;
+        if (content[ptr] == 'n') {
+            c = '\n';
+            ++ptr;
+        } else {
+            c = '\\';
+        }
+    } else {
+        c = content[ptr];
+        ++ptr;
+    }
+    return c;
+}
 
 Token Lexer::get_token() {
     Token token;
@@ -53,6 +69,8 @@ Token Lexer::get_token() {
             token.type = T_ELSE;
         } else if (str == "for") {
             token.type = T_FOR;
+        } else if (str == "break") {
+            token.type = T_BREAK;
         } else {
             token.type = T_IDENTIFIER;
         }
@@ -102,13 +120,20 @@ Token Lexer::get_token() {
         ++ptr;
     } else if (content[ptr] == '"') {
         do {
-            str += content[ptr];
-            ++ptr;
+            str += get_char();
         } while (content[ptr] != '"');
 
         ++ptr;
         token.type = T_STR;
         token.value = str.substr(1);
+    } else if (content[ptr] == '\''){
+        token.type = T_CHAR;
+        token.value.push_back(get_char());
+        if (content[ptr] != '\'') {
+            std::cout << (char)content[ptr];
+            throw std::exception();
+        }
+        ++ptr;
     } else {
         // TODO: exception
         std::cout << (char)content[ptr];
