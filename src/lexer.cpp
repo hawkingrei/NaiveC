@@ -57,7 +57,7 @@ Token Lexer::get_token() {
         do {
             str += content[ptr];
             ++ptr;
-        } while (isalpha(content[ptr]) || isdigit(content[ptr]));
+        } while (isalpha(content[ptr]) || isdigit(content[ptr]) || content[ptr] == '_');
 
         token.value = str;
         if (str == "def") {
