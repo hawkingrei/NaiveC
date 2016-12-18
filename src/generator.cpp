@@ -7,6 +7,43 @@
 
 static Generator* generator = Generator::instance();
 
+void Generator::extern_printf() {
+    std::vector<llvm::Type*> puts_args;
+    puts_args.push_back(builder.getInt8Ty()->getPointerTo());
+    llvm::ArrayRef<llvm::Type*> args_ref(puts_args);
+
+    llvm::FunctionType* puts_type =
+        llvm::FunctionType::get(builder.getInt32Ty(), args_ref, true);
+
+    llvm::Function* function =
+        llvm::Function::Create(
+            puts_type,
+            llvm::Function::ExternalLinkage,
+            "printf",
+            module.get()
+        );
+
+    function->dump();
+}
+
+void Generator::extern_gets() {
+    std::vector<llvm::Type*> gets_args;
+    gets_args.push_back(builder.getInt8PtrTy());
+    llvm::ArrayRef<llvm::Type*> args_ref(gets_args);
+    llvm::FunctionType* gets_type =
+        llvm::FunctionType::get(builder.getInt8PtrTy(), args_ref, false);
+
+    llvm::Function* function =
+        llvm::Function::Create(
+            gets_type,
+            llvm::Function::ExternalLinkage,
+            "gets",
+            module.get()
+        );
+
+    function->dump();
+}
+
 llvm::Value* NumberExprAST::code_gen() {
     return llvm::ConstantInt::get(generator->context, llvm::APInt(32, (uint64_t) value, true));
 }

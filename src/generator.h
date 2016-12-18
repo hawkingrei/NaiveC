@@ -29,17 +29,12 @@ private:
                   type_map({{"int",  llvm::Type::getInt32Ty(context)},
                             {"char", llvm::Type::getInt8Ty(context)},
                            }) {
-
-        std::vector<llvm::Type *> puts_args;
-        puts_args.push_back(builder.getInt8Ty()->getPointerTo());
-        llvm::ArrayRef<llvm::Type*>  argsRef(puts_args);
-
-        llvm::FunctionType *puts_type =
-            llvm::FunctionType::get(builder.getInt32Ty(), argsRef, true);
-
-        llvm::Function* function = llvm::Function::Create(puts_type, llvm::Function::ExternalLinkage, "printf", module.get());
-        function->dump();
+        extern_printf();
+        extern_gets();
     }
+
+    void extern_printf();
+    void extern_gets();
 
 public:
     llvm::LLVMContext context;
