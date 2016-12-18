@@ -52,6 +52,8 @@ public:
     std::map<std::string, bool> symbol_is_ptr_table;
     std::map<std::string, parser::TypeForm> symbol_type_table;
 
+    size_t label_id = 0;
+
     Generator(const Generator&) = delete;
 
     Generator(Generator&&) = delete;

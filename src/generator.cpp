@@ -61,7 +61,9 @@ llvm::Value* StrAST::code_gen() {
     llvm::Type* type_p = generator->type_map["char"];
     type_p = llvm::ArrayType::get(type_p, content.size() + 1);
 
-    llvm::AllocaInst* alloca = generator->builder.CreateAlloca(type_p);
+    llvm::AllocaInst* alloca = generator->builder.CreateAlloca(type_p, nullptr,
+                                                               "var" + std::to_string(generator->label_id));
+    ++generator->label_id;
     generator->builder.CreateStore(str, alloca);
     llvm::Value* value = generator->builder.CreateBitCast(alloca, llvm::Type::getInt8PtrTy(generator->context));
 
@@ -100,7 +102,7 @@ llvm::Value* VariableExprAST::get_ref() {
     }
 }
 
-llvm::Value* VariableExprAST::get_ptr_of_value(llvm::Value *v, llvm::Value *index) {
+llvm::Value* VariableExprAST::get_ptr_of_value(llvm::Value* v, llvm::Value* index) {
     if (generator->symbol_type_table[name] == parser::POINTER) {
         llvm::Value* point_v = generator->builder.CreateLoad(v);
         return generator->builder.CreateGEP(point_v, index);
@@ -127,14 +129,14 @@ llvm::Value* BinaryExprAST::code_gen() {
     } else if (op == "*") {
         return generator->builder.CreateMul(l, r, "multmp");
     } else if (op == "<") {
-        l = generator->builder.CreateICmpULT(l, r, "cmplttmp");
-        return generator->builder.CreateSExt(l, generator->builder.getInt32Ty(), "boollttmp");
+        l = generator->builder.CreateICmpSLT(l, r, "cmplttmp");
+        return generator->builder.CreateZExt(l, generator->builder.getInt32Ty(), "boollttmp");
     } else if (op == "==") {
         l = generator->builder.CreateICmpEQ(l, r, "cmpeqtmp");
-        return generator->builder.CreateSExt(l, generator->builder.getInt32Ty(), "booletmp");
+        return generator->builder.CreateZExt(l, generator->builder.getInt32Ty(), "booletmp");
     } else if (op == "!=") {
         l = generator->builder.CreateICmpNE(l, r, "cmpnetmp");
-        return generator->builder.CreateSExt(l, generator->builder.getInt32Ty(), "boolnetmp");
+        return generator->builder.CreateZExt(l, generator->builder.getInt32Ty(), "boolnetmp");
     }
 
     return nullptr;
@@ -161,7 +163,7 @@ llvm::Value* CallExprAST::code_gen() {
 llvm::Function* PrototypeAST::code_gen() {
 //    std::vector<llvm::Type*> values(args.size(), llvm::Type::getInt32Ty(generator->context));
     std::vector<llvm::Type*> values;
-    for (auto & arg_type: arg_types) {
+    for (auto& arg_type: arg_types) {
         std::string type_str;
         if (arg_type->form == parser::RAW_TYPE) {
             type_str = arg_type->type.type_name;
@@ -228,7 +230,8 @@ llvm::Value* IfStatementAST::code_gen() {
     }
 
     cond_v = generator->builder.CreateICmpNE(
-        cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true));
+        cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true),
+        "condcmp" + std::to_string(generator->label_id));
 
     llvm::Function* function = generator->builder.GetInsertBlock()->getParent();
 
@@ -275,11 +278,11 @@ llvm::Value* ForStatementAST::code_gen() {
 
     llvm::Function* function = generator->builder.GetInsertBlock()->getParent();
     llvm::BasicBlock* loop_start_b =
-        llvm::BasicBlock::Create(generator->context, "loopstart", function);
+        llvm::BasicBlock::Create(generator->context, "", function);
     llvm::BasicBlock* loop_body_b =
-        llvm::BasicBlock::Create(generator->context, "loopbody", function);
+        llvm::BasicBlock::Create(generator->context, "", function);
     llvm::BasicBlock* loop_end_b =
-        llvm::BasicBlock::Create(generator->context, "loopend", function);
+        llvm::BasicBlock::Create(generator->context, "", function);
 
     generator->builder.CreateBr(loop_start_b);
 
@@ -323,11 +326,15 @@ llvm::Function* FunctionAST::code_gen() {
         return nullptr;
     }
 
-    llvm::BasicBlock* block = llvm::BasicBlock::Create(generator->context, "entry", function);
+    llvm::BasicBlock* block = llvm::BasicBlock::Create(generator->context,
+                                                       "entry" + std::to_string(generator->label_id), function);
+
+    ++generator->label_id;
+
     generator->builder.SetInsertPoint(block);
 
 //    generator->symbol_table.clear();
-    size_t  idx= 0;
+    size_t idx = 0;
     for (auto& arg: function->args()) {
         auto& arg_type = proto->arg_types[idx];
         std::string type_str;
