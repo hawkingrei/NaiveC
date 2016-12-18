@@ -3,6 +3,7 @@
 //
 
 #include "parser.h"
+#include "generator.h"
 #include <string>
 
 using namespace parser;

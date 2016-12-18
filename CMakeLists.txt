@@ -16,6 +16,6 @@ aux_source_directory(src SOURCE_FILES)
 
 add_executable(naive_c ${SOURCE_FILES})
 
-llvm_map_components_to_libnames(llvm_libs support core irreader)
+llvm_map_components_to_libnames(llvm_libs support core irreader bitwriter)
 
 target_link_libraries(naive_c ${llvm_libs})

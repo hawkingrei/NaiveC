@@ -5,6 +5,8 @@
 #include "generator.h"
 #include "parser.h"
 
+Generator* Generator::_instance = nullptr;
+
 static Generator* generator = Generator::instance();
 
 void Generator::extern_printf() {
@@ -42,6 +44,12 @@ void Generator::extern_gets() {
         );
 
     function->dump();
+}
+
+void Generator::dump(std::string filename) {
+    std::error_code ec;
+    llvm::raw_fd_ostream os(filename, ec, llvm::sys::fs::F_None);
+    llvm::WriteBitcodeToFile(module.get(), os);
 }
 
 llvm::Value* NumberExprAST::code_gen() {

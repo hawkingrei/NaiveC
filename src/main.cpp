@@ -5,6 +5,7 @@
 #include <utility>
 #include "lexer.h"
 #include "parser.h"
+#include "generator.h"
 
 using std::cout;
 using std::endl;
@@ -35,4 +36,8 @@ int main(int argc, char *argv[]) {
     Parser parser(lexer.tokenize());
 
     parser.main_loop();
+
+    std::string file_base = filename.substr(0, filename.find_last_of("."));
+
+    Generator::instance()->dump(file_base + ".bc");
 }

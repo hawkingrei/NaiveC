@@ -18,6 +18,9 @@
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
+#include <llvm/Bitcode/ReaderWriter.h>
+#include <llvm/Support/FileSystem.h>
+
 
 class Generator {
 private:
@@ -33,6 +36,7 @@ private:
     }
 
     void extern_printf();
+
     void extern_gets();
 
 public:
@@ -65,9 +69,9 @@ public:
         llvm::IRBuilder<> tmp_builder(&f->getEntryBlock(), f->getEntryBlock().begin());
         return tmp_builder.CreateAlloca(type_p, nullptr, var_name);
     }
-};
 
-Generator* Generator::_instance = nullptr;
+    void dump(std::string filename);
+};
 
 
 #endif //NAIVEC_GENERATOR_H
