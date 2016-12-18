@@ -26,7 +26,7 @@ enum TokenType {
     T_COMMA,
     T_DEF,
     T_RETURN,
-    T_VAR,
+    T_STAR,
     T_IF,
     T_ELSE,
     T_STR,

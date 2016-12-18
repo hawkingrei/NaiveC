@@ -147,6 +147,10 @@ std::vector<Token> Lexer::tokenize() {
     Token token;
     std::vector<Token> tokens;
     while ((token = get_token()).type != T_EOF) {
+        if (tokens.back().type == T_TYPE && token.type == T_OP && token.value == "*") {
+            token.type = T_STAR;
+        }
+
         tokens.push_back(token);
     }
 
