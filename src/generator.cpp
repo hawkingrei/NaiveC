@@ -228,13 +228,13 @@ llvm::Value* IfStatementAST::code_gen() {
     }
 
     cond_v = generator->builder.CreateICmpNE(
-        cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "ifcond");
+        cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true));
 
     llvm::Function* function = generator->builder.GetInsertBlock()->getParent();
 
-    llvm::BasicBlock* if_basic_block = llvm::BasicBlock::Create(generator->context, "if", function);
-    llvm::BasicBlock* else_basic_block = llvm::BasicBlock::Create(generator->context, "else", function);
-    llvm::BasicBlock* merge_basic_block = llvm::BasicBlock::Create(generator->context, "ifcont", function);
+    llvm::BasicBlock* if_basic_block = llvm::BasicBlock::Create(generator->context, "", function);
+    llvm::BasicBlock* else_basic_block = llvm::BasicBlock::Create(generator->context, "", function);
+    llvm::BasicBlock* merge_basic_block = llvm::BasicBlock::Create(generator->context, "", function);
 
     generator->builder.CreateCondBr(cond_v, if_basic_block, else_basic_block);
     generator->builder.SetInsertPoint(if_basic_block);
