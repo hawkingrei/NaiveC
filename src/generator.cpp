@@ -101,9 +101,10 @@ llvm::Value* VariableExprAST::get_ref() {
 }
 
 llvm::Value* VariableExprAST::get_ptr_of_value(llvm::Value *v, llvm::Value *index) {
-//    if (generator->symbol_type_table[name] == parser::POINTER) {
-//        return generator->builder.CreateGEP(v, index);
-//    }
+    if (generator->symbol_type_table[name] == parser::POINTER) {
+        llvm::Value* point_v = generator->builder.CreateLoad(v);
+        return generator->builder.CreateGEP(point_v, index);
+    }
     std::vector<llvm::Value*> indexes;
     llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
     indexes.push_back(zero);
