@@ -214,6 +214,10 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
         return parse_for_statement();
     }
 
+    if ((token_it + 1)->type == T_PAREN_L) {
+        return parse_call_statement();
+    }
+
     std::unique_ptr<VariableExprAST> expr_l = parse_variable_expr();
 
     if (token_it->type != T_ASSIGN) {
@@ -264,6 +268,13 @@ std::unique_ptr<StatementAST> Parser::parse_for_ctrl_statement() {
     std::unique_ptr<ExprAST> expr_r = parse_expr();
 
     return std::make_unique<AssignStatementAST>(std::move(expr_l), std::move(expr_r));
+}
+
+std::unique_ptr<StatementAST> Parser::parse_call_statement() {
+    std::unique_ptr<ExprAST> expr = parse_identifier_expr();
+    assert_token(T_SEMICOLON);
+    ++token_it;
+    return std::make_unique<CallStatement>(std::move(expr));
 }
 
 std::unique_ptr<StatementAST> Parser::parse_for_statement() {

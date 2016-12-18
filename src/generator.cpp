@@ -174,6 +174,10 @@ llvm::Value* ReturnStatementAST::code_gen() {
     return generator->builder.CreateRet(expr->code_gen());
 }
 
+llvm::Value* CallStatement::code_gen() {
+    return expr->code_gen();
+}
+
 llvm::Value* IfStatementAST::code_gen() {
     llvm::Value* cond_v = cond->code_gen();
 

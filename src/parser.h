@@ -134,6 +134,17 @@ public:
     virtual llvm::Value* code_gen() override;
 };
 
+class CallStatement : public StatementAST {
+private:
+    std::unique_ptr<ExprAST> expr;
+
+public:
+    CallStatement(std::unique_ptr<ExprAST> &&expr)
+        : expr(std::move(expr)) {}
+
+    virtual llvm::Value* code_gen() override;
+};
+
 class IfStatementAST : public StatementAST {
 private:
     std::unique_ptr<ExprAST> cond;
@@ -245,6 +256,8 @@ public:
     std::unique_ptr<StatementAST> parse_for_statement();
 
     std::unique_ptr<StatementAST> parse_for_ctrl_statement();
+
+    std::unique_ptr<StatementAST> parse_call_statement();
 
     std::unique_ptr<DeclareStatementAST> parse_declare();
 
