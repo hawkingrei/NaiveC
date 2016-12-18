@@ -25,27 +25,27 @@ llvm::Value* StrAST::code_gen() {
 
 llvm::Value* VariableExprAST::code_gen() {
     if (is_array) {
-        llvm::Value *v = Generator::instance()->symbol_table[name];
-        std::vector<llvm::Value *> indexes;
+        llvm::Value* v = Generator::instance()->symbol_table[name];
+        std::vector<llvm::Value*> indexes;
         llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
         indexes.push_back(zero);
-        llvm::Value *index_v = index->code_gen();
+        llvm::Value* index_v = index->code_gen();
         indexes.push_back(index_v);
-        llvm::Value *gep_v = generator->builder.CreateGEP(v, indexes);
+        llvm::Value* gep_v = generator->builder.CreateGEP(v, indexes);
         return generator->builder.CreateLoad(gep_v);
     } else {
-        llvm::Value *v = Generator::instance()->symbol_table[name];
+        llvm::Value* v = Generator::instance()->symbol_table[name];
         return generator->builder.CreateLoad(v, name);
     }
 }
 
 llvm::Value* VariableExprAST::get_ref() {
     if (is_array) {
-        llvm::Value *v = Generator::instance()->symbol_table[name];
-        std::vector<llvm::Value *> indexes;
+        llvm::Value* v = Generator::instance()->symbol_table[name];
+        std::vector<llvm::Value*> indexes;
         llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
         indexes.push_back(zero);
-        llvm::Value *index_v = index->code_gen();
+        llvm::Value* index_v = index->code_gen();
         indexes.push_back(index_v);
         return generator->builder.CreateGEP(v, indexes);
     } else {
@@ -115,7 +115,6 @@ llvm::Value* DeclareStatementAST::code_gen() {
     llvm::AllocaInst* var = nullptr;
     if (is_array) {
         type_p = llvm::ArrayType::get(type_p, array_length);
-//        generator->create_entry_block_alloca(f, type_p, name)->stripPointerCasts();
         generator->symbol_flag[name] = true;
     } else {
         generator->symbol_flag[name] = false;
@@ -123,8 +122,6 @@ llvm::Value* DeclareStatementAST::code_gen() {
     var = generator->create_entry_block_alloca(f, type_p, name);
     if (!is_array) {
         generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
-    } else {
-
     }
 
     generator->symbol_table[name] = var;
@@ -133,17 +130,7 @@ llvm::Value* DeclareStatementAST::code_gen() {
 }
 
 llvm::Value* AssignStatementAST::code_gen() {
-//    expr_l->code_gen()->getPointer
     return generator->builder.CreateStore(expr_r->code_gen(), expr_l->get_ref());
-//    if (expr_l->is_index()) {
-//        llvm::Value *expr_r_v = expr_r->code_gen();
-//        llvm::Value *expr_l_v = expr_l->code_gen();
-//
-//        llvm::LoadInst *expr_l_load = llvm::dyn_cast<llvm::LoadInst>(expr_l_v);
-//        return generator->builder.CreateStore(expr_r_v, expr_l_load->getPointerOperand());
-//    } else {
-//        return generator->builder.CreateStore(expr_r->code_gen(), expr_l->get_ref());
-//    }
 }
 
 llvm::Value* ReturnStatementAST::code_gen() {
@@ -196,26 +183,27 @@ llvm::Value* IfStatementAST::code_gen() {
 }
 
 llvm::Value* ForStatementAST::code_gen() {
-    llvm::Value *start_v = start->code_gen();
-    if (!start_v)
+    llvm::Value* start_v = start->code_gen();
+    if (!start_v) {
         return nullptr;
+    }
 
     generator->symbol_table[var_name];
 
-    llvm::Function *function = generator->builder.GetInsertBlock()->getParent();
-    llvm::BasicBlock *loop_start_b =
-            llvm::BasicBlock::Create(generator->context, "loopstart", function);
-    llvm::BasicBlock *loop_body_b =
-            llvm::BasicBlock::Create(generator->context, "loopbody", function);
-    llvm::BasicBlock *loop_end_b =
-            llvm::BasicBlock::Create(generator->context, "loopend", function);
+    llvm::Function* function = generator->builder.GetInsertBlock()->getParent();
+    llvm::BasicBlock* loop_start_b =
+        llvm::BasicBlock::Create(generator->context, "loopstart", function);
+    llvm::BasicBlock* loop_body_b =
+        llvm::BasicBlock::Create(generator->context, "loopbody", function);
+    llvm::BasicBlock* loop_end_b =
+        llvm::BasicBlock::Create(generator->context, "loopend", function);
 
     generator->builder.CreateBr(loop_start_b);
 
     generator->builder.SetInsertPoint(loop_start_b);
-    llvm::Value *cond_v = cond->code_gen();
+    llvm::Value* cond_v = cond->code_gen();
     cond_v = generator->builder.CreateICmpNE(
-            cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "loopcond");
+        cond_v, llvm::ConstantInt::get(llvm::Type::getInt32Ty(generator->context), 0, true), "loopcond");
     generator->builder.CreateCondBr(cond_v, loop_body_b, loop_end_b);
 
     generator->builder.SetInsertPoint(loop_body_b);
