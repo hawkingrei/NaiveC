@@ -125,7 +125,8 @@ llvm::Value* BinaryExprAST::code_gen() {
     if (op == "+") {
         return generator->builder.CreateAdd(l, r, "addtmp");
     } else if (op == "-") {
-        return generator->builder.CreateSub(l, r, "subtmp");
+        l = generator->builder.CreateSub(l, r, "subtmp");
+        return generator->builder.CreateZExt(l, generator->builder.getInt32Ty(), "intsubtmp");
     } else if (op == "*") {
         return generator->builder.CreateMul(l, r, "multmp");
     } else if (op == "<") {
@@ -202,7 +203,7 @@ llvm::Value* DeclareStatementAST::code_gen() {
 
     var = generator->create_entry_block_alloca(f, llvm_type_p, var_name);
     if (type_p->form == parser::RAW_TYPE) {
-        generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
+        generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map[type_p->type.type_name], 0, true), var);
     }
     generator->symbol_table[var_name] = var;
     generator->symbol_is_ptr_table[var_name] = type_p->form;
