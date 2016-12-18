@@ -7,11 +7,11 @@
 
 using namespace parser;
 
-std::map<char, int> Parser::precedence_map = {
-    {'<', 10},
-    {'+', 20},
-    {'-', 20},
-    {'*', 40},
+std::map<std::string, int> Parser::precedence_map = {
+    {"<", 10},
+    {"+", 20},
+    {"-", 20},
+    {"*", 40},
 };
 
 inline void Parser::assert_token(TokenType token_type) throw() {
@@ -159,7 +159,7 @@ int Parser::get_token_prec() {
         return -1;
     }
 
-    int token_prec = precedence_map[token_it->value[0]];
+    int token_prec = precedence_map[token_it->value];
 
     return (token_prec <= 0) ? -1 : token_prec;
 }
@@ -178,7 +178,7 @@ std::unique_ptr<ExprAST> Parser::parse_bin_op_right(int expr_prec, std::unique_p
             return nullptr;
         }
 
-        int next_prec = precedence_map[token_it->value[0]];
+        int next_prec = precedence_map[token_it->value];
 
         if (token_prec < next_prec) {
             right = parse_bin_op_right(token_prec + 1, std::move(right));

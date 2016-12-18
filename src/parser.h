@@ -257,7 +257,7 @@ class Parser {
 private:
     std::vector<Token> tokens;
     std::vector<Token>::iterator token_it;
-    static std::map<char, int> precedence_map;
+    static std::map<std::string, int> precedence_map;
 
     int get_token_prec();
 
