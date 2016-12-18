@@ -36,15 +36,15 @@ struct Type {
     TypeForm form;
     struct {
         std::string type_name;
-        struct {
-            std::unique_ptr<Type> raw_type;
-            size_t length;
-        };
+        std::unique_ptr<Type> raw_type;
+        size_t length;
     } type;
 
     Type(const std::string& type_name) {
         form = RAW_TYPE;
         type.type_name = type_name;
+        type.raw_type = nullptr;
+        type.length = 0;
     }
 
     Type(std::unique_ptr<Type>&& raw_type, size_t length = 0) {
