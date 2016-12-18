@@ -449,12 +449,8 @@ void Parser::handle_global_declare() {
 }
 
 void Parser::main_loop() {
-    // lookahead 3 characters
-//    int id = 0;
-//    std::cout << "Begin" << std::endl;
     while (tokens.end() - token_it > 2) {
         assert_token(T_TYPE);
-//        std::cout << id << std::endl;
         switch ((token_it + 2)->type) {
             case T_PAREN_L:
                 handle_definition();

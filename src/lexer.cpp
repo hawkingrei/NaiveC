@@ -19,7 +19,7 @@ char Lexer::get_char() {
             c = '\n';
             ++ptr;
         } else if (content[ptr] == '0') {
-            c == '\0';
+            c = '\0';
             ++ptr;
         } else {
             c = '\\';
@@ -136,10 +136,10 @@ Token Lexer::get_token() {
     } else if (content[ptr] == '\''){
         token.type = T_CHAR;
         ++ptr;
-        token.value.push_back(content[ptr]);
-        ++ptr;
+        token.value.push_back(get_char());
         if (content[ptr] != '\'') {
-            std::cout << (char)content[ptr];
+            std::cout << (char)content[ptr]<< std::endl;
+            std::cout << "NO SINGLE QUOTE" << std::endl;
             throw std::exception();
         }
         ++ptr;

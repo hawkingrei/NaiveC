@@ -108,7 +108,7 @@ llvm::Value* VariableExprAST::get_ptr_of_value(llvm::Value *v, llvm::Value *inde
     std::vector<llvm::Value*> indexes;
     llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
     indexes.push_back(zero);
-    indexes.push_back(zero);
+    indexes.push_back(index);
     return generator->builder.CreateGEP(v, indexes);
 }
 
