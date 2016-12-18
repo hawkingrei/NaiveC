@@ -24,6 +24,38 @@
 
 class CodeBlockAST;
 
+namespace parser {
+
+enum TypeForm {
+    RAW_TYPE,
+    ARRAY,
+    POINTER,
+};
+
+struct Type {
+    TypeForm form;
+    struct {
+        std::string type_name;
+        struct {
+            std::unique_ptr<Type> raw_type;
+            size_t length;
+        };
+    } type;
+
+    Type(const std::string& type_name) {
+        form = RAW_TYPE;
+        type.type_name = type_name;
+    }
+
+    Type(std::unique_ptr<Type>&& raw_type, size_t length = 0) {
+        type.length = length;
+        type.raw_type = std::move(raw_type);
+        form = (length == 0) ? POINTER : ARRAY;
+    }
+};
+
+}
+
 class ExprAST {
 public:
     virtual llvm::Value* code_gen() = 0;
@@ -57,8 +89,10 @@ private:
     std::unique_ptr<ExprAST> index;
 public:
     VariableExprAST(std::string name, bool is_array = false, std::unique_ptr<ExprAST> index = nullptr) :
-            name(name), is_array(is_array), index(std::move(index)) {}
+        name(name), is_array(is_array), index(std::move(index)) {}
+
     llvm::Value* get_ref();
+
     virtual llvm::Value* code_gen() override;
 };
 
@@ -106,16 +140,12 @@ public:
 
 class DeclareStatementAST : public StatementAST {
 private:
-    std::string type;
-    std::string name;
-    bool is_array;
-    size_t array_length;
+    std::unique_ptr<parser::Type> type_p;
+    std::string var_name;
     bool is_global;
 public:
-    DeclareStatementAST(std::string type, const std::string& name, bool is_array = false,
-                        size_t array_length = 0, bool is_global = false)
-        : type(type), name(name), is_array(is_array),
-          array_length(array_length), is_global(is_global) {}
+    DeclareStatementAST(std::unique_ptr<parser::Type>&& type, const std::string& var_name, bool is_global = false)
+        : type_p(std::move(type)), var_name(var_name), is_global(is_global) {}
 
     inline void set_global(const bool g) {
         is_global = g;
@@ -139,7 +169,7 @@ private:
     std::unique_ptr<ExprAST> expr;
 
 public:
-    CallStatement(std::unique_ptr<ExprAST> &&expr)
+    CallStatement(std::unique_ptr<ExprAST>&& expr)
         : expr(std::move(expr)) {}
 
     virtual llvm::Value* code_gen() override;
@@ -172,15 +202,15 @@ private:
 
 public:
     ForStatementAST(const std::string& var_name, std::unique_ptr<StatementAST>&& start,
-               std::unique_ptr<ExprAST>&& cond, std::unique_ptr<StatementAST>&& step,
-               std::unique_ptr<CodeBlockAST>&& for_block)
-            : var_name(var_name),
-              start(std::move(start)),
-              cond(std::move(cond)),
-              step(std::move(step)),
-              for_block(std::move(for_block)) {}
+                    std::unique_ptr<ExprAST>&& cond, std::unique_ptr<StatementAST>&& step,
+                    std::unique_ptr<CodeBlockAST>&& for_block)
+        : var_name(var_name),
+          start(std::move(start)),
+          cond(std::move(cond)),
+          step(std::move(step)),
+          for_block(std::move(for_block)) {}
 
-    virtual llvm::Value *code_gen() override ;
+    virtual llvm::Value* code_gen() override;
 };
 
 class PrototypeAST {
@@ -204,6 +234,7 @@ public:
 class CodeBlockAST {
 public:
     std::vector<std::unique_ptr<StatementAST>> statements;
+
     llvm::BasicBlock* code_gen();
 
     CodeBlockAST(std::vector<std::unique_ptr<StatementAST>>&& statements)

@@ -147,21 +147,26 @@ llvm::Function* PrototypeAST::code_gen() {
 
 llvm::Value* DeclareStatementAST::code_gen() {
     llvm::Function* f = generator->builder.GetInsertBlock()->getParent();
+    llvm::Type* llvm_type_p;
 
-    llvm::Type* type_p = generator->type_map[type];
-    llvm::AllocaInst* var = nullptr;
-    if (is_array) {
-        type_p = llvm::ArrayType::get(type_p, array_length);
-        generator->symbol_flag[name] = true;
+    if (type_p->form == parser::RAW_TYPE) {
+        llvm_type_p = generator->type_map[type_p->type.type_name];
+        generator->symbol_flag[var_name] = true;
     } else {
-        generator->symbol_flag[name] = false;
+        // array
+        llvm_type_p = generator->type_map[type_p->type.raw_type->type.type_name];
+        llvm_type_p = llvm::ArrayType::get(llvm_type_p, type_p->type.length);
+        generator->symbol_flag[var_name] = false;
     }
-    var = generator->create_entry_block_alloca(f, type_p, name);
-    if (!is_array) {
+
+    llvm::AllocaInst* var = nullptr;
+
+    var = generator->create_entry_block_alloca(f, llvm_type_p, var_name);
+    if (type_p->form == parser::RAW_TYPE) {
         generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
     }
 
-    generator->symbol_table[name] = var;
+    generator->symbol_table[var_name] = var;
 
     return var;
 }

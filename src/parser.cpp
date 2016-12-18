@@ -5,6 +5,8 @@
 #include "parser.h"
 #include <string>
 
+using namespace parser;
+
 std::map<char, int> Parser::precedence_map = {
     {'<', 10},
     {'+', 20},
@@ -103,7 +105,7 @@ std::unique_ptr<ExprAST> Parser::parse_primary() {
 }
 
 std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
-    std::string type = token_it->value;
+    std::string type_name = token_it->value;
     ++token_it; // remove type
 
     if (token_it->type != T_IDENTIFIER) {
@@ -116,7 +118,8 @@ std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
 
     if (token_it->type == T_SEMICOLON) {
         ++token_it;
-        return std::make_unique<DeclareStatementAST>(type, id_name);
+        auto type_p = std::make_unique<Type>(type_name);
+        return std::make_unique<DeclareStatementAST>(std::move(type_p), id_name);
     }
 
     assert_token(T_SQUARE_L);
@@ -132,7 +135,9 @@ std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
     assert_token(T_SEMICOLON);
     ++token_it;
 
-    return std::make_unique<DeclareStatementAST>(type, id_name, true, array_length);
+    auto raw_type_p = std::make_unique<Type>(type_name);
+
+    return std::make_unique<DeclareStatementAST>(std::make_unique<Type>(std::move(raw_type_p), array_length), id_name);
 }
 
 std::unique_ptr<CodeBlockAST> Parser::parse_code_block() {
