@@ -103,20 +103,24 @@ llvm::Value* BinaryExprAST::code_gen() {
         return nullptr;
     }
 
-    switch (op) {
-        case '+':
-            return generator->builder.CreateAdd(l, r, "addtmp");
-        case '-':
-            return generator->builder.CreateSub(l, r, "subtmp");
-        case '*':
-            return generator->builder.CreateMul(l, r, "multmp");
-        case '<':
-            l = generator->builder.CreateICmpULT(l, r, "cmptmp");
-            return generator->builder.CreateSExt(
-                l, llvm::Type::getInt32Ty(generator->context), "booltmp");
-        default:
-            return nullptr;
+    if (op == "+") {
+        return generator->builder.CreateAdd(l, r, "addtmp");
+    } else if (op == "-") {
+        return generator->builder.CreateSub(l, r, "subtmp");
+    } else if (op == "*") {
+        return generator->builder.CreateMul(l, r, "multmp");
+    } else if (op == "<") {
+        l = generator->builder.CreateICmpULT(l, r, "cmplttmp");
+        return generator->builder.CreateSExt(l, generator->builder.getInt32Ty(), "boollttmp");
+    } else if (op == "==") {
+        l = generator->builder.CreateICmpEQ(l, r, "cmpeqtmp");
+        return generator->builder.CreateSExt(l, generator->builder.getInt32Ty(), "booletmp");
+    } else if (op == "!=") {
+        l = generator->builder.CreateICmpNE(l, r, "cmpnetmp");
+        return generator->builder.CreateSExt(l, generator->builder.getInt32Ty(), "boolnetmp");
     }
+
+    return nullptr;
 }
 
 llvm::Value* CallExprAST::code_gen() {

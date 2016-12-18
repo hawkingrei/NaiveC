@@ -99,11 +99,11 @@ public:
 
 class BinaryExprAST : public ExprAST {
 private:
-    char op;
+    std::string op;
     std::unique_ptr<ExprAST> left;
     std::unique_ptr<ExprAST> right;
 public:
-    BinaryExprAST(char op, std::unique_ptr<ExprAST>&& left, std::unique_ptr<ExprAST>&& right)
+    BinaryExprAST(std::string op, std::unique_ptr<ExprAST>&& left, std::unique_ptr<ExprAST>&& right)
         : op(op), left(std::move(left)), right(std::move(right)) {}
 
     virtual llvm::Value* code_gen() override;

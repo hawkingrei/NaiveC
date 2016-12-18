@@ -126,6 +126,10 @@ Token Lexer::get_token() {
         ++ptr;
         token.type = T_STR;
         token.value = str.substr(1);
+    } else if (content[ptr] == '!') {
+        token.type = T_OP;
+        token.value = "!=";
+        ptr += 2;
     } else if (content[ptr] == '\''){
         token.type = T_CHAR;
         token.value.push_back(get_char());
@@ -147,7 +151,7 @@ std::vector<Token> Lexer::tokenize() {
     Token token;
     std::vector<Token> tokens;
     while ((token = get_token()).type != T_EOF) {
-        if (tokens.back().type == T_TYPE && token.type == T_OP && token.value == "*") {
+        if (!tokens.empty() && tokens.back().type == T_TYPE && token.type == T_OP && token.value == "*") {
             token.type = T_STAR;
         }
 

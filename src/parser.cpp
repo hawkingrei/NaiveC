@@ -9,6 +9,8 @@ using namespace parser;
 
 std::map<std::string, int> Parser::precedence_map = {
     {"<", 10},
+    {"==", 10},
+    {"!=", 10},
     {"+", 20},
     {"-", 20},
     {"*", 40},
@@ -171,7 +173,7 @@ std::unique_ptr<ExprAST> Parser::parse_bin_op_right(int expr_prec, std::unique_p
             return left;
         }
 
-        char op = token_it->value[0];
+        std::string op = token_it->value;
         ++token_it;
         std::unique_ptr<ExprAST> right = parse_primary();
         if (!right) {
