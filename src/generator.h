@@ -47,7 +47,10 @@ public:
     llvm::Constant* puts_func;
     std::unique_ptr<llvm::Module> module;
     std::map<std::string, llvm::AllocaInst*> symbol_table;
+    std::map<std::string, bool> symbol_flag;
     std::map<std::string, llvm::Type*> type_map;
+
+    std::vector<llvm::Value *> constants;
 
     Generator(const Generator&) = delete;
 

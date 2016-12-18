@@ -24,9 +24,33 @@ llvm::Value* StrAST::code_gen() {
 }
 
 llvm::Value* VariableExprAST::code_gen() {
-    llvm::Value* v = Generator::instance()->symbol_table[name];
-    // TODO: error
-    return generator->builder.CreateLoad(v, name);
+    if (is_array) {
+        llvm::Value *v = Generator::instance()->symbol_table[name];
+        std::vector<llvm::Value *> indexes;
+        llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
+        indexes.push_back(zero);
+        llvm::Value *index_v = index->code_gen();
+        indexes.push_back(index_v);
+        llvm::Value *gep_v = generator->builder.CreateGEP(v, indexes);
+        return generator->builder.CreateLoad(gep_v);
+    } else {
+        llvm::Value *v = Generator::instance()->symbol_table[name];
+        return generator->builder.CreateLoad(v, name);
+    }
+}
+
+llvm::Value* VariableExprAST::get_ref() {
+    if (is_array) {
+        llvm::Value *v = Generator::instance()->symbol_table[name];
+        std::vector<llvm::Value *> indexes;
+        llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
+        indexes.push_back(zero);
+        llvm::Value *index_v = index->code_gen();
+        indexes.push_back(index_v);
+        return generator->builder.CreateGEP(v, indexes);
+    } else {
+        return Generator::instance()->symbol_table[name];
+    }
 }
 
 llvm::Value* BinaryExprAST::code_gen() {
@@ -88,19 +112,38 @@ llvm::Value* DeclareStatementAST::code_gen() {
     llvm::Function* f = generator->builder.GetInsertBlock()->getParent();
 
     llvm::Type* type_p = generator->type_map[type];
+    llvm::AllocaInst* var = nullptr;
     if (is_array) {
         type_p = llvm::ArrayType::get(type_p, array_length);
+//        generator->create_entry_block_alloca(f, type_p, name)->stripPointerCasts();
+        generator->symbol_flag[name] = true;
+    } else {
+        generator->symbol_flag[name] = false;
+    }
+    var = generator->create_entry_block_alloca(f, type_p, name);
+    if (!is_array) {
+        generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
+    } else {
+
     }
 
-    llvm::AllocaInst* var = generator->create_entry_block_alloca(f, type_p, name);
-    generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
     generator->symbol_table[name] = var;
 
     return var;
 }
 
 llvm::Value* AssignStatementAST::code_gen() {
-    return generator->builder.CreateStore(expr_r->code_gen(), generator->symbol_table[var_name]);
+//    expr_l->code_gen()->getPointer
+    return generator->builder.CreateStore(expr_r->code_gen(), expr_l->get_ref());
+//    if (expr_l->is_index()) {
+//        llvm::Value *expr_r_v = expr_r->code_gen();
+//        llvm::Value *expr_l_v = expr_l->code_gen();
+//
+//        llvm::LoadInst *expr_l_load = llvm::dyn_cast<llvm::LoadInst>(expr_l_v);
+//        return generator->builder.CreateStore(expr_r_v, expr_l_load->getPointerOperand());
+//    } else {
+//        return generator->builder.CreateStore(expr_r->code_gen(), expr_l->get_ref());
+//    }
 }
 
 llvm::Value* ReturnStatementAST::code_gen() {

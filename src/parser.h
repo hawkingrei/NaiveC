@@ -53,9 +53,12 @@ public:
 class VariableExprAST : public ExprAST {
 private:
     std::string name;
+    bool is_array;
+    std::unique_ptr<ExprAST> index;
 public:
-    VariableExprAST(std::string name) : name(name) {}
-
+    VariableExprAST(std::string name, bool is_array = false, std::unique_ptr<ExprAST> index = nullptr) :
+            name(name), is_array(is_array), index(std::move(index)) {}
+    llvm::Value* get_ref();
     virtual llvm::Value* code_gen() override;
 };
 
@@ -91,12 +94,12 @@ public:
 
 class AssignStatementAST : public StatementAST {
 private:
-    std::string var_name;
+    std::unique_ptr<VariableExprAST> expr_l;
     std::unique_ptr<ExprAST> expr_r;
 
 public:
-    AssignStatementAST(const std::string& var_name, std::unique_ptr<ExprAST>&& expr_r)
-        : var_name(var_name), expr_r(std::move(expr_r)) {}
+    AssignStatementAST(std::unique_ptr<VariableExprAST>&& expr_l, std::unique_ptr<ExprAST>&& expr_r)
+        : expr_l(std::move(expr_l)), expr_r(std::move(expr_r)) {}
 
     virtual llvm::Value* code_gen() override;
 };
@@ -226,6 +229,8 @@ public:
     std::unique_ptr<ExprAST> parse_paren_expr();
 
     std::unique_ptr<ExprAST> parse_identifier_expr();
+
+    std::unique_ptr<VariableExprAST> parse_variable_expr();
 
     std::unique_ptr<ExprAST> parse_str_expr();
 

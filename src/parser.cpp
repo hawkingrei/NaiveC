@@ -46,13 +46,31 @@ std::unique_ptr<ExprAST> Parser::parse_paren_expr() {
 }
 
 std::unique_ptr<ExprAST> Parser::parse_identifier_expr() {
-    std::string id_name = token_it->value;
-    ++token_it;
-    if (token_it->type != T_PAREN_L) {
-        return std::make_unique<VariableExprAST>(id_name);
-    }
 
-    ++token_it;
+//    if (token_it->type != T_PAREN_L) {
+//        return std::make_unique<VariableExprAST>(id_name);
+//    }
+    if ((token_it + 1)->type != T_PAREN_L) {
+//        assert_token(T_IDENTIFIER);
+//        std::string id_name = token_it->value;
+//        ++token_it;
+//
+//        if (token_it->type == T_SQUARE_L) {
+//            ++token_it;
+//
+//            std::unique_ptr<ExprAST> index = parse_expr();
+//
+//            assert_token(T_PAREN_R);
+//            ++token_it;
+//            return std::make_unique<VariableExprAST>(id_name, true, std::move(index));
+//        } else {
+//            return std::make_unique<VariableExprAST>(id_name);
+//        }
+        return parse_variable_expr();
+    }
+    std::string id_name = token_it->value;
+    ++token_it; //consume id
+    ++token_it; //consume (
 
     std::vector<std::unique_ptr<ExprAST>> args;
 
@@ -215,8 +233,7 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
         return parse_for_statement();
     }
 
-    std::string var_name = token_it->value;
-    ++token_it;
+    std::unique_ptr<VariableExprAST> expr_l = parse_variable_expr();
 
     if (token_it->type != T_ASSIGN) {
         return nullptr;
@@ -229,7 +246,7 @@ std::unique_ptr<StatementAST> Parser::parse_statement() {
     assert_token(T_SEMICOLON);
     ++token_it;
 
-    return std::make_unique<AssignStatementAST>(var_name, std::move(expr_r));
+    return std::make_unique<AssignStatementAST>(std::move(expr_l), std::move(expr_r));
 }
 
 std::unique_ptr<StatementAST> Parser::parse_if_statement() {
@@ -258,15 +275,16 @@ std::unique_ptr<StatementAST> Parser::parse_if_statement() {
 
 std::unique_ptr<StatementAST> Parser::parse_for_ctrl_statement() {
     assert_token(T_IDENTIFIER);
-    std::string var_name = token_it->value;
-    ++token_it;
+//    std::string var_name = token_it->value;
+//    ++token_it;
+    std::unique_ptr<VariableExprAST> expr_l = parse_variable_expr();
 
     assert_token(T_ASSIGN);
     ++token_it; // remove '='
 
     std::unique_ptr<ExprAST> expr_r = parse_expr();
 
-    return std::make_unique<AssignStatementAST>(var_name, std::move(expr_r));
+    return std::make_unique<AssignStatementAST>(std::move(expr_l), std::move(expr_r));
 }
 
 std::unique_ptr<StatementAST> Parser::parse_for_statement() {
@@ -316,6 +334,36 @@ std::unique_ptr<PrototypeAST> Parser::parse_prototype() {
     ++token_it;
 
     return std::make_unique<PrototypeAST>(ret_type, fn_name, std::move(arg_names));
+}
+
+std::unique_ptr<VariableExprAST> Parser::parse_variable_expr() {
+    assert_token(T_IDENTIFIER);
+    std::string id_name = token_it->value;
+    ++token_it;
+
+    if (token_it->type == T_SQUARE_L) {
+        ++token_it;
+
+        std::unique_ptr<ExprAST> index = nullptr;
+        switch (token_it->type) {
+            case T_NUMBER:
+                index = parse_number_expr();
+                break;
+            case T_IDENTIFIER:
+                index = parse_variable_expr();
+                break;
+            default:
+                // TODO
+                std::cerr << "Index not support" << std::endl;
+                throw std::exception();
+        }
+
+        assert_token(T_SQUARE_R);
+        ++token_it;
+        return std::make_unique<VariableExprAST>(id_name, true, std::move(index));
+    } else {
+        return std::make_unique<VariableExprAST>(id_name);
+    }
 }
 
 std::unique_ptr<FunctionAST> Parser::parse_definition() {
