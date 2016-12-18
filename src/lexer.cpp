@@ -5,7 +5,7 @@
 #include "lexer.h"
 #include <cctype>
 
-std::ostream &operator<<(std::ostream &out, Token &t) {
+std::ostream& operator<<(std::ostream& out, Token& t) {
     out << t.type << ' ' << t.value << std::endl;
 
     return out;
@@ -89,7 +89,9 @@ Token Lexer::get_token() {
         } else {
             token.type = T_ASSIGN;
         }
-    } else if (content[ptr] == '+' || content[ptr] == '-' || content[ptr] == '*' || content[ptr] == '<') {
+    } else if (content[ptr] == '+' || content[ptr] == '-' ||
+               content[ptr] == '*' || content[ptr] == '/' ||
+               content[ptr] == '<') {
         token.type = T_OP;
         token.value.push_back(content[ptr]);
         ++ptr;
@@ -133,19 +135,19 @@ Token Lexer::get_token() {
         token.type = T_OP;
         token.value = "!=";
         ptr += 2;
-    } else if (content[ptr] == '\''){
+    } else if (content[ptr] == '\'') {
         token.type = T_CHAR;
         ++ptr;
         token.value.push_back(get_char());
         if (content[ptr] != '\'') {
-            std::cout << (char)content[ptr]<< std::endl;
+            std::cout << (char) content[ptr] << std::endl;
             std::cout << "NO SINGLE QUOTE" << std::endl;
             throw std::exception();
         }
         ++ptr;
     } else {
         // TODO: exception
-        std::cout << (char)content[ptr];
+        std::cout << (char) content[ptr];
         throw std::exception();
     }
 

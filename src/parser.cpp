@@ -15,6 +15,7 @@ std::map<std::string, int> Parser::precedence_map = {
     {"+", 20},
     {"-", 20},
     {"*", 40},
+    {"/", 40},
 };
 
 inline void Parser::assert_token(TokenType token_type) throw() {

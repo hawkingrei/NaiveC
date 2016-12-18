@@ -129,6 +129,8 @@ llvm::Value* BinaryExprAST::code_gen() {
         return generator->builder.CreateZExt(l, generator->builder.getInt32Ty(), "intsubtmp");
     } else if (op == "*") {
         return generator->builder.CreateMul(l, r, "multmp");
+    } else if (op == "/") {
+        return generator->builder.CreateSDiv(l, r, "divtmp");
     } else if (op == "<") {
         l = generator->builder.CreateICmpSLT(l, r, "cmplttmp");
         return generator->builder.CreateZExt(l, generator->builder.getInt32Ty(), "boollttmp");
