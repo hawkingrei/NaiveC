@@ -69,7 +69,7 @@ llvm::Value* StrAST::code_gen() {
 }
 
 llvm::Value* CharAST::code_gen() {
-    return llvm::ConstantInt::get(generator->context, llvm::APInt(8, (uint64_t)value, true));
+    return llvm::ConstantInt::get(generator->context, llvm::APInt(8, value, true));
 }
 
 llvm::Value* VariableExprAST::code_gen() {
@@ -326,7 +326,7 @@ llvm::Function* FunctionAST::code_gen() {
     llvm::BasicBlock* block = llvm::BasicBlock::Create(generator->context, "entry", function);
     generator->builder.SetInsertPoint(block);
 
-    generator->symbol_table.clear();
+//    generator->symbol_table.clear();
     size_t  idx= 0;
     for (auto& arg: function->args()) {
         auto& arg_type = proto->arg_types[idx];
