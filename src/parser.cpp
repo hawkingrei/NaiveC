@@ -118,7 +118,7 @@ std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
 
     if (token_it->type == T_SEMICOLON) {
         ++token_it;
-        auto type_p = std::make_unique<Type>(type_name);
+        auto type_p = std::make_unique<VarType>(type_name);
         return std::make_unique<DeclareStatementAST>(std::move(type_p), id_name);
     }
 
@@ -135,9 +135,9 @@ std::unique_ptr<DeclareStatementAST> Parser::parse_declare() {
     assert_token(T_SEMICOLON);
     ++token_it;
 
-    auto raw_type_p = std::make_unique<Type>(type_name);
+    auto raw_type_p = std::make_unique<VarType>(type_name);
 
-    return std::make_unique<DeclareStatementAST>(std::make_unique<Type>(std::move(raw_type_p), array_length), id_name);
+    return std::make_unique<DeclareStatementAST>(std::make_unique<VarType>(std::move(raw_type_p), array_length), id_name);
 }
 
 std::unique_ptr<CodeBlockAST> Parser::parse_code_block() {

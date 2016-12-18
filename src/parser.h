@@ -32,22 +32,22 @@ enum TypeForm {
     POINTER,
 };
 
-struct Type {
+struct VarType {
     TypeForm form;
     struct {
         std::string type_name;
-        std::unique_ptr<Type> raw_type;
+        std::unique_ptr<VarType> raw_type;
         size_t length;
     } type;
 
-    Type(const std::string& type_name) {
+    VarType(const std::string& type_name) {
         form = RAW_TYPE;
         type.type_name = type_name;
         type.raw_type = nullptr;
         type.length = 0;
     }
 
-    Type(std::unique_ptr<Type>&& raw_type, size_t length = 0) {
+    VarType(std::unique_ptr<VarType>&& raw_type, size_t length = 0) {
         type.length = length;
         type.raw_type = std::move(raw_type);
         form = (length == 0) ? POINTER : ARRAY;
@@ -87,6 +87,7 @@ private:
     std::string name;
     bool is_array;
     std::unique_ptr<ExprAST> index;
+    llvm::Value* get_ptr_of_value(llvm::Value* v, llvm::Value *val);
 public:
     VariableExprAST(std::string name, bool is_array = false, std::unique_ptr<ExprAST> index = nullptr) :
         name(name), is_array(is_array), index(std::move(index)) {}
@@ -140,11 +141,11 @@ public:
 
 class DeclareStatementAST : public StatementAST {
 private:
-    std::unique_ptr<parser::Type> type_p;
+    std::unique_ptr<parser::VarType> type_p;
     std::string var_name;
     bool is_global;
 public:
-    DeclareStatementAST(std::unique_ptr<parser::Type>&& type, const std::string& var_name, bool is_global = false)
+    DeclareStatementAST(std::unique_ptr<parser::VarType>&& type, const std::string& var_name, bool is_global = false)
         : type_p(std::move(type)), var_name(var_name), is_global(is_global) {}
 
     inline void set_global(const bool g) {

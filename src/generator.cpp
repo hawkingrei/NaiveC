@@ -61,33 +61,38 @@ llvm::Value* StrAST::code_gen() {
 }
 
 llvm::Value* VariableExprAST::code_gen() {
+    llvm::Value* v = Generator::instance()->symbol_table[name];
     if (is_array) {
-        llvm::Value* v = Generator::instance()->symbol_table[name];
-        std::vector<llvm::Value*> indexes;
-        llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
-        indexes.push_back(zero);
         llvm::Value* index_v = index->code_gen();
-        indexes.push_back(index_v);
-        llvm::Value* gep_v = generator->builder.CreateGEP(v, indexes);
+        llvm::Value* gep_v = get_ptr_of_value(v, index_v);
         return generator->builder.CreateLoad(gep_v);
     } else {
-        llvm::Value* v = Generator::instance()->symbol_table[name];
-        return generator->builder.CreateLoad(v, name);
+        if (generator->symbol_is_ptr_table[name]) {
+            llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
+            return get_ptr_of_value(v, zero);
+        } else {
+            llvm::Value* v = Generator::instance()->symbol_table[name];
+            return generator->builder.CreateLoad(v, name);
+        }
     }
 }
 
 llvm::Value* VariableExprAST::get_ref() {
     if (is_array) {
         llvm::Value* v = Generator::instance()->symbol_table[name];
-        std::vector<llvm::Value*> indexes;
-        llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
-        indexes.push_back(zero);
         llvm::Value* index_v = index->code_gen();
-        indexes.push_back(index_v);
-        return generator->builder.CreateGEP(v, indexes);
+        return get_ptr_of_value(v, index_v);
     } else {
         return Generator::instance()->symbol_table[name];
     }
+}
+
+llvm::Value* VariableExprAST::get_ptr_of_value(llvm::Value *v, llvm::Value *index) {
+    std::vector<llvm::Value*> indexes;
+    llvm::Value* zero = llvm::ConstantInt::get(generator->context, llvm::APInt(32, 0));
+    indexes.push_back(zero);
+    indexes.push_back(index);
+    return generator->builder.CreateGEP(v, indexes);
 }
 
 llvm::Value* BinaryExprAST::code_gen() {
@@ -151,12 +156,10 @@ llvm::Value* DeclareStatementAST::code_gen() {
 
     if (type_p->form == parser::RAW_TYPE) {
         llvm_type_p = generator->type_map[type_p->type.type_name];
-        generator->symbol_flag[var_name] = true;
     } else {
         // array
         llvm_type_p = generator->type_map[type_p->type.raw_type->type.type_name];
         llvm_type_p = llvm::ArrayType::get(llvm_type_p, type_p->type.length);
-        generator->symbol_flag[var_name] = false;
     }
 
     llvm::AllocaInst* var = nullptr;
@@ -165,8 +168,8 @@ llvm::Value* DeclareStatementAST::code_gen() {
     if (type_p->form == parser::RAW_TYPE) {
         generator->builder.CreateStore(llvm::ConstantInt::get(generator->type_map["int"], 0, true), var);
     }
-
     generator->symbol_table[var_name] = var;
+    generator->symbol_is_ptr_table[var_name] = type_p->form != parser::RAW_TYPE;
 
     return var;
 }
